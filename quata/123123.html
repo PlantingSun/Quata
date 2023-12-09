@@ -1,0 +1,184 @@
+<mujoco model="quata">
+  <compiler angle="radian" meshdir="./"/>
+  <statistic meansize="0.03" extent="0.465147" center="-0.0174153 1.79806e-11 -0.0268814"/>
+  <asset>
+    <mesh name="base_link" file="base_link.STL"/>
+    <mesh name="End" file="End.STL"/>
+
+    <!--
+        upperLeg大腿，upperhuke上面的横杆，lowerleg12小腿，lowerhuke下面的横杆
+    -->
+    <mesh name="upperLegA" file="upperLegA.STL"/>
+    <mesh name="upperHukeA" file="upperHukeA.STL"/>
+    <mesh name="lowerLegA1" file="lowerLegA1.STL"/>
+    <mesh name="lowerLegA2" file="lowerLegA2.STL"/>
+    <mesh name="lowerHukeA" file="lowerHukeA.STL"/>
+
+    <mesh name="upperLegB" file="upperLegB.STL"/>
+    <mesh name="upperHukeB" file="upperHukeB.STL"/>
+    <mesh name="lowerLegB1" file="lowerLegB1.STL"/>
+    <mesh name="lowerLegB2" file="lowerLegB2.STL"/>
+    <mesh name="lowerHukeB" file="lowerHukeB.STL"/>
+
+    <mesh name="upperLegC" file="upperLegC.STL"/>
+    <mesh name="upperHukeC" file="upperHukeC.STL"/>
+    <mesh name="lowerLegC1" file="lowerLegC1.STL"/>
+    <mesh name="lowerLegC2" file="lowerLegC2.STL"/>
+    <mesh name="lowerHukeC" file="lowerHukeC.STL"/>
+    
+    <texture name="grid" type="2d" builtin="checker" rgb1=".1 .2 .3"
+    rgb2=".2 .3 .4" width="300" height="300" />
+  <material name="grid" texture="grid" texrepeat="8 8" reflectance=".1" />
+  </asset>
+  <!-- <default>
+    <geom contype="0" conaffinity="0" />
+  </default> -->
+  <worldbody>
+    <light name="top" pos="0 0 10" castshadow="false" />
+    <geom size="10 10 .01" type="plane" pos="0 0 -0.20" material="grid" contype="1" conaffinity="1" />
+    <geom type="mesh" contype="1" conaffinity="1" group="1" density="0" rgba="1 1 1 1" mesh="base_link"/>
+    <geom type="mesh" rgba="1 1 1 1" mesh="base_link"/>
+    
+    <body name="upperLegA" pos="-0.0625 0 0.0425" quat="0 0 -0.707107 0.707107">
+      <inertial pos="-0.0625 0.0138747 1.06267e-09" quat="0.654197 0.654197 0.268376 -0.268376" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+      <joint name="Joint11" pos="0 0 0" axis="0 0 1"/>
+      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="upperLegA"/>
+      <geom type="mesh" rgba="1 1 1 1" mesh="upperLegA"/>
+      <body name="upperHukeA" pos="0.11 0 0" quat="0.484768 0 0 0.874643">
+        <inertial pos="0.103191 0.138926 1.06267e-09" quat="0.442089 0.702289 0.0824008 0.551867" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+        <joint name="Joint21" pos="0 0 0" axis="0 0 1"/>
+        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="upperHukeA"/>
+        <geom type="mesh" rgba="1 1 1 1" mesh="upperHukeA"/>
+        <body name="lowerLegA1" pos="0 0 0.016" quat="0.336547 -0.621881 0.621881 0.336547">
+          <inertial pos="-0.0625901 -0.103191 0.125056" quat="0.524929 0.826744 0.195816 0.0509836" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+          <joint name="Joint311" pos="0 0 0" axis="0.546944 0 -0.837169"/>
+          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="lowerLegA1"/>
+          <geom type="mesh" rgba="1 1 1 1" mesh="lowerLegA1"/>
+          <body name="lowerHukeA" pos="-0.0019143 -0.25 0.0029301" quat="0.336548 0.621879 -0.621881 -0.33655">
+            <inertial pos="-0.146809 0.135426 -0.016" quat="0.442089 0.702289 0.0824008 0.551867" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+            <joint name="Joint41" pos="0 0 0" axis="0 -1 0"/>
+            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="lowerHukeA"/>
+            <geom type="mesh" rgba="1 1 1 1" mesh="lowerHukeA"/>
+            <body name="End" pos="0 -0.0035 -0.006" quat="0.757461 0.242385 -0.437322 0.419823">
+              <inertial pos="0.0113397 0.198125 -0.039641" quat="0.707107 0.707107 0 0" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+              <joint name="End" pos="0 0 0" axis="0.866027 0 0.499998"/>
+              <geom type="mesh" contype="1" conaffinity="1" group="1" density="0" rgba="1 1 1 1" mesh="End"/>
+              <geom type="mesh" rgba="1 1 1 1" mesh="End"/>
+            </body>
+          </body>
+        </body>
+        <body name="lowerLegA2" pos="0 0 -0.016" quat="0.621881 0.336547 -0.336547 0.621881">
+          <inertial pos="0.0893795 -0.103191 -0.107553" quat="0.826744 0.524929 -0.0509836 -0.195816" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+          <joint name="Joint312" pos="0 0 0" axis="0.546944 0 -0.837169"/>
+          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="lowerLegA2"/>
+          <geom type="mesh" rgba="1 1 1 1" mesh="lowerLegA2"/>
+        </body>
+      </body>
+    </body>
+    <body name="upperLegB" pos="0.03125 0.0541266 0.0425" quat="0.612372 0.612372 0.353553 0.353553">
+      <inertial pos="-0.0625 -0.0138747 5.36002e-10" quat="0.5 0.5 -0.5 0.5" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+      <joint name="Joint12" pos="0 0 0" axis="0 0 1"/>
+      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="upperLegB"/>
+      <geom type="mesh" rgba="1 1 1 1" mesh="upperLegB"/>
+      <body name="upperHukeB" pos="0.11 0 0" quat="0.874643 0 0 0.484768">
+        <inertial pos="-0.103191 0.138926 5.36002e-10" quat="-0.106926 0.649401 0.279783 0.698975" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+        <joint name="Joint22" pos="0 0 0" axis="0 0 1"/>
+        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="upperHukeB"/>
+        <geom type="mesh" rgba="1 1 1 1" mesh="upperHukeB"/>
+        <body name="lowerLegB1" pos="0 0 -0.016" quat="0.621881 -0.336547 -0.336547 -0.621881">
+          <inertial pos="-0.0625901 -0.103191 0.125056" quat="0.429111 0.813889 -0.24379 0.306618" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+          <joint name="Joint321" pos="0 0 0" axis="0.546944 0 -0.837169"/>
+          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="lowerLegB1"/>
+          <geom type="mesh" rgba="1 1 1 1" mesh="lowerLegB1"/>
+          <body name="lowerHukeB" pos="-0.0019143 -0.25 0.0029301" quat="0.621879 0.336548 0.336549 0.621882">
+            <inertial pos="0.146809 0.135426 0.016" quat="-0.106926 0.649401 0.279783 0.698975" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+            <joint name="Joint42" pos="0 0 0" axis="0 -1 0"/>
+            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="lowerHukeB"/>
+            <geom type="mesh" rgba="1 1 1 1" mesh="lowerHukeB"/>
+          </body>
+        </body>
+        <body name="lowerLegB2" pos="0 0 0.016" quat="-0.336547 -0.621881 -0.621881 0.336547">
+          <inertial pos="0.0893795 -0.103191 -0.107553" quat="0.813889 0.429111 -0.306618 0.24379" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+          <joint name="Joint322" pos="0 0 0" axis="0.546944 0 -0.837169"/>
+          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="lowerLegB2"/>
+          <geom type="mesh" rgba="1 1 1 1" mesh="lowerLegB2"/>
+        </body>
+      </body>
+    </body>
+    <body name="upperLegC" pos="0.03125 -0.0541266 0.0425" quat="0.612372 0.612372 -0.353553 -0.353553">
+      <inertial pos="-0.0625 -0.0138747 5.26666e-10" quat="0.707107 0.707107 0 0" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+      <joint name="Joint13" pos="0 0 0" axis="0 0 1"/>
+      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="upperLegC"/>
+      <geom type="mesh" rgba="1 1 1 1" mesh="upperLegC"/>
+      <body name="upperHukeC" pos="0.11 0 0" quat="0.874643 0 0 0.484768">
+        <inertial pos="-0.103191 0.138926 5.26666e-10" quat="0.256886 0.422506 0.567 0.658794" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+        <joint name="Joint23" pos="0 0 0" axis="0 0 1"/>
+        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="upperHukeC"/>
+        <geom type="mesh" rgba="1 1 1 1" mesh="upperHukeC"/>
+        <body name="lowerLegC1" pos="0 0 -0.016" quat="0.621881 -0.336547 -0.336547 -0.621881">
+          <inertial pos="-0.0625901 -0.103191 0.125056" quat="0.218311 0.582954 -0.618073 0.480094" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+          <joint name="Joint331" pos="0 0 0" axis="0.546944 0 -0.837169"/>
+          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="lowerLegC1"/>
+          <geom type="mesh" rgba="1 1 1 1" mesh="lowerLegC1"/>
+          <body name="lowerHukeC" pos="-0.0019143 -0.25 0.0029301" quat="0.336548 -0.621879 -0.621881 0.33655">
+            <inertial pos="0.146809 -0.135426 -0.016" quat="0.567 0.658794 0.256886 0.422506" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+            <joint name="Joint43" pos="0 0 0" axis="0 1 0"/>
+            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="lowerHukeC"/>
+            <geom type="mesh" rgba="1 1 1 1" mesh="lowerHukeC"/>
+          </body>
+        </body>
+        <body name="lowerLegC2" pos="0 0 0.016" quat="0.336547 0.621881 0.621881 -0.336547">
+          <inertial pos="0.0893795 -0.103191 -0.107553" quat="0.582954 0.218311 -0.480094 0.618073" mass="1.31324" diaginertia="0.00747169 0.00747169 0.00723244"/>
+          <joint name="Joint332" pos="0 0 0" axis="0.546944 0 -0.837169"/>
+          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="lowerLegC2"/>
+          <geom type="mesh" rgba="1 1 1 1" mesh="lowerLegC2"/>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <contact>
+
+        <exclude name="ct1" body1="lowerHukeA" body2="End" />
+        <exclude name="ct2" body1="lowerHukeB" body2="End" />
+        <exclude name="ct3" body1="lowerHukeC" body2="End" />
+        
+        <exclude name="ct4" body1="lowerHukeA" body2="lowerLegA2" />
+        <exclude name="ct5" body1="lowerHukeB" body2="lowerLegB2" />
+        <exclude name="ct6" body1="lowerHukeC" body2="lowerLegC2" />
+        <exclude name="ct7" body1="lowerHukeA" body2="lowerLegA1" />
+        <exclude name="ct8" body1="lowerHukeB" body2="lowerLegB1" />
+        <exclude name="ct9" body1="lowerHukeC" body2="lowerLegC1" />
+
+        <exclude name="ct41" body1="upperHukeA" body2="lowerLegA2" />
+        <exclude name="ct51" body1="upperHukeB" body2="lowerLegB2" />
+        <exclude name="ct61" body1="upperHukeC" body2="lowerLegC2" />
+        <exclude name="ct71" body1="upperHukeA" body2="lowerLegA1" />
+        <exclude name="ct81" body1="upperHukeB" body2="lowerLegB1" />
+        <exclude name="ct91" body1="upperHukeC" body2="lowerLegC1" />
+
+        <exclude name="ct11" body1="upperLegA" body2="base_link" />
+        <exclude name="ct22" body1="upperLegB" body2="base_link" />
+        <exclude name="ct33" body1="upperLegC" body2="base_link" />
+  </contact>
+
+
+  <equality>   
+        <connect name="cn31241_1"  body1="lowerHukeA" body2="lowerLegA2" anchor="0 0 -0.032" solref="-100000 0"/>
+        <connect name="cn31241_2"  body1="lowerHukeA" body2="lowerLegA2" anchor="0 -0.007 -0.032" solref="-100000 0"/>
+        <connect name="cn32242_1"  body1="lowerHukeB" body2="lowerLegB2" anchor="0 0 0.032" solref="-100000 0"/>
+        <connect name="cn32242_2"  body1="lowerHukeB" body2="lowerLegB2" anchor="0 -0.007 0.032" solref="-100000 0"/>
+        <connect name="cn33243_1"  body1="lowerHukeC" body2="lowerLegC2" anchor="0 0 -0.032" solref="-100000 0"/>
+        <connect name="cn33243_2"  body1="lowerHukeC" body2="lowerLegC2" anchor="0 0.007 -0.032" solref="-100000 0"/>
+        <connect name="cn42End_1"  body1="lowerHukeB" body2="End" anchor="0 -0.0035 0.008" solref="-100000 0"/>
+        <connect name="cn42End_2"  body1="lowerHukeB" body2="End" anchor="0 -0.0035 0.024" solref="-100000 0"/>
+        <connect name="cn43End_1"  body1="lowerHukeC" body2="End" anchor="0 0.0035 -0.008" solref="-100000 0"/>
+        <connect name="cn43End_2"  body1="lowerHukeC" body2="End" anchor="0 0.0035 -0.024" solref="-100000 0"/>
+  </equality>
+
+  <actuator>
+        <position joint="Joint11" ctrllimited="true" ctrlrange="-1 1" kp="10000"/>
+        <position joint="Joint12" ctrllimited="true" ctrlrange="-1 1" kp="10000"/>
+        <position joint="Joint13" ctrllimited="true" ctrlrange="-1 1" kp="10000"/>
+  </actuator>
+</mujoco>
