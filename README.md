@@ -4,7 +4,7 @@ QUAdruped robot with delTA.
 quata1.0 is a one-legged robot to test
 
 # How to start Simulation?
-**new:** you can run ./run_quota_sim.sh to start the simulation. 
+**new:** git clone these into a src folder and you can run ./run_quota_sim.sh to start the simulation. 
 
  1. make the Quata folder into a catkin workspace's src path, like `~/quata_ws/src/Quata`
  2. build the workspace and source
