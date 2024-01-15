@@ -1,3 +1,4 @@
+from ossaudiodev import control_labels
 import mujoco as mj
 import numpy as np
 from mujoco_base import MuJoCoBase
@@ -41,7 +42,7 @@ class QuataSim(MuJoCoBase):
 
 		# subscribe joints torque and position
 		rospy.Subscriber("/jointsTorque", Float32MultiArray, self.controlCallback) 
-		rospy.Subscriber("/jointsCmd", motor_data, self.publishMotorCmd) 
+		rospy.Subscriber("/jointCmd", motor_data, self.run_motor_callback)
 		# rospy.Subscriber("/jointsTorque", Float32MultiArray, self.controlCallback) 
 		# * show the model
 		mj.mj_step(self.model, self.data)
@@ -57,16 +58,23 @@ class QuataSim(MuJoCoBase):
 							mj.mjtCatBit.mjCAT_ALL.value, self.scene)
 		mj.mjr_render(viewport, self.scene, self.context)
 
-	# def create_overlay(model, data):
-	# 	bottomLeft = mj.mjtGridPos.mjGRID_BOTTOMLEFT
-	# 	add_overlay(bottomLeft,"Restart","Backspace",)
-	# 	add_overlay(bottomLeft,"Start simulation","space",)
-
-	def publishMotorCmd(self, data):
-		
+ 
 	def controlCallback(self, data):
 		d = list(data.data[:])
 		self.data.ctrl[:] = d
+	
+	def run_motor_callback(self, msg):
+		'''subscribe motor command data and apply it to the model
+			id[0]->qpos[1], id[1]->qpos[7], id[2]->qpos[12]
+     	'''
+		data = self.data
+		kp = msg.kp
+		kd = msg.kd
+		map_id_to_motor = [1, 7, 12]
+		motor_id = map_id_to_motor[msg.id]
+		data.qfrc_applied[motor_id] = msg.tor +\
+  		kp*(msg.pos_tar - data.qpos[motor_id]) +\
+    	kd*(msg.vel_tar - data.qvel[motor_id])
   
 	def reset(self):
 		# Set camera configuration
@@ -156,7 +164,24 @@ class QuataSim(MuJoCoBase):
 		talk_theread.start()
 		listen_theread.start()
 
+	# def create_overlay(model, data):
+	# 	bottomLeft = mj.mjtGridPos.mjGRID_BOTTOMLEFT
+	# 	add_overlay(bottomLeft,"Restart","Backspace",)
+	# 	add_overlay(bottomLeft,"Start simulation","space",)
 
+	# def publishMotorCmd(self, data):
+	
+	def controller_test(self, data):
+		motorData = motor_data()
+		motorData.id = 0
+		motorData.pos_tar = -1
+		motorData.vel_tar = 0.0
+		motorData.kp = 10.0
+		motorData.kd = 0.1
+		motorData.tor = 0.0
+		self.pubMotor.publish(motorData)
+  
+  
 	def simulate(self):
 		print("-----------------------")
 
@@ -174,6 +199,8 @@ class QuataSim(MuJoCoBase):
 				# * Publish joint positions and velocities
 				self.get_sensor_data_and_publish()
 				
+				# self.controller_test(self.data)
+				# self.test_ros_publish()
 
 				# sleep untile 2ms don't use rospy.Rate
 				while (glfw.get_time() - now) < 0.00099:
