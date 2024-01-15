@@ -189,7 +189,6 @@ class QuataSim(MuJoCoBase):
 		# input()
 		while not glfw.window_should_close(self.window):
 			simstart = self.data.time
-			print("simstart:",simstart)
 			while (self.data.time - simstart <= 1.0/60.0 and not self.pause_flag):
 				# get current absolute time 
 				now = glfw.get_time()			
@@ -206,7 +205,6 @@ class QuataSim(MuJoCoBase):
 				while (glfw.get_time() - now) < 0.00099:
 					pass
 			
-			print("curent time:",self.data.time)
 			if self.data.time >= self.simend:
 				break
 
