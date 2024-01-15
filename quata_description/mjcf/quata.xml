@@ -45,6 +45,7 @@
     <body name="base" pos = "0 0 0.25">
       <!--freejoint用来控制baselink是不是浮动的-->
       <!-- <freejoint /> -->
+      <site name="Imu" size=".01" pos="0 0 0"/>
       <joint name="baseslide" pos="0 0 0" axis="0 0 1" type="slide"/>
       <inertial pos="0 0 0.042512" quat="0 0 0 1" mass="1.087" diaginertia="2.7582e-03 2.7582e-03 4.6608e-03"/>
       <geom type="mesh" contype="1" conaffinity="0" rgba="1 1 1 1" mesh="base_link"/>
@@ -152,4 +153,29 @@
     <position name="JointC_pos" joint="JointupperLegC" ctrllimited="true" ctrlrange="-1 1" kp="10"/>
     <velocity joint="JointupperLegC" ctrllimited="true" ctrlrange="-1 1" kv="0.1"/>
   </actuator>
+
+  <sensor>
+    <!-- Imu data -->
+    <!-- Todo: add noise and cutoff -->
+    <framequat name="BodyQuat" objtype="site" objname="Imu"/>
+    <gyro name="BodyGyro" site="Imu" noise="0" />
+    <accelerometer name="BodyAcc" site="Imu" noise="0" cutoff="100"/>
+    
+    <!-- Joint data -->
+    <actuatorpos name="JointAPos" actuator="JointA_pos" noise="0"/>
+    <actuatorpos name="JointBPos" actuator="JointB_pos" noise="0"/>
+    <actuatorpos name="JointCPos" actuator="JointC_pos" noise="0"/>
+    
+    <actuatorvel name="JointAVel" actuator="JointA_pos" noise="0"/>
+    <actuatorvel name="JointBVel" actuator="JointB_pos" noise="0"/>
+    <actuatorvel name="JointCVel" actuator="JointC_pos" noise="0"/>
+    
+    <actuatorfrc name="JointATor" actuator="JointA_pos" noise="0"/>
+    <actuatorfrc name="JointBTor" actuator="JointB_pos" noise="0"/>
+    <actuatorfrc name="JointCTor" actuator="JointC_pos" noise="0"/>
+
+    <!-- <velocimeter name="BodyVel" site="Imu" noise="0" cutoff="157"/> -->
+
+  </sensor>
+
 </mujoco>

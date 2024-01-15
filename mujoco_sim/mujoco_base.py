@@ -48,6 +48,8 @@ class MuJoCoBase():
             simState = Bool()
             simState.data = self.pause_flag
             self.pubSimState.publish(simState)
+        if act == glfw.PRESS and key == glfw.KEY_ESCAPE:
+            glfw.terminate()
             
 
     def mouse_button(self, window, button, act, mods):

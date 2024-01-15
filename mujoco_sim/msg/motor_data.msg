@@ -1,0 +1,10 @@
+uint16 id
+float64 pos
+float64 vel
+float64 tor
+float64 tem
+float64 pos_tar
+float64 vel_tar
+float64 tor_tar
+float64 kp
+float64 kd
