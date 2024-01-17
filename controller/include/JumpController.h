@@ -57,7 +57,7 @@ namespace controller{
         void VectorSub3(double* arr_front,double* arr_back,double* arr_out);
         void CrossProduct3(double* arr_front,double* arr_back,double* arr_out);
         double Norm3(double* arr);
-        const double sqr3 = 1.7325080757;
+        const double sqr3 = 1.73205081;
     };
 
     class JumpController{

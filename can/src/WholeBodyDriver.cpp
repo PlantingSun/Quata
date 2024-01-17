@@ -274,14 +274,7 @@ namespace wholebodydriver
     {
         for(int i = 0;i < joint_num;i++)
         {
-            temp_cmd.ID = i;
-            temp_cmd.pos_tar = 0.0;
-            temp_cmd.vel_tar = 1.5;
-            temp_cmd.tor_tar = 0.0;
-            temp_cmd.kp = 0.0;
-            temp_cmd.kd = 0.5;
-
-            cybergear.MixControl(frame0_s,temp_cmd);
+            cybergear.MixControl(frame0_s,joint_data[i]);
             SendCan(s0);
 
             usleep(2000);
@@ -296,9 +289,9 @@ namespace wholebodydriver
                     joint_data[j].vel = rx_data.vel;
                     joint_data[j].tor = rx_data.tor;
                     joint_data[j].tem = rx_data.tem;
-                    printf("ID:%d\n",joint_data[j].ID);
-                    printf("pos:%lf  vel:%lf\n",joint_data[j].pos,joint_data[j].vel);
-                    printf("tor:%lf  tem:%lf\n",joint_data[j].tor,joint_data[j].tem);
+                    // printf("ID:%d\n",joint_data[j].ID);
+                    // printf("pos:%lf  vel:%lf\n",joint_data[j].pos,joint_data[j].vel);
+                    // printf("tor:%lf  tem:%lf\n",joint_data[j].tor,joint_data[j].tem);
                 }
         }
     }
@@ -317,10 +310,10 @@ void cybergearCallback(const can::motor_data::ConstPtr& motor_cmd,wholebodydrive
 {
     ROS_INFO("I heard");
     joint_data[(*motor_cmd).id - 1].pos_tar = (*motor_cmd).pos_tar;
-    joint_data[(*motor_cmd).id - 1].vel_tar = (*motor_cmd).pos_tar;
-    joint_data[(*motor_cmd).id - 1].tor_tar = (*motor_cmd).pos_tar;
-    joint_data[(*motor_cmd).id - 1].kp = (*motor_cmd).pos_tar;
-    joint_data[(*motor_cmd).id - 1].kd = (*motor_cmd).pos_tar;
+    joint_data[(*motor_cmd).id - 1].vel_tar = (*motor_cmd).vel_tar;
+    joint_data[(*motor_cmd).id - 1].tor_tar = (*motor_cmd).tor_tar;
+    joint_data[(*motor_cmd).id - 1].kp = (*motor_cmd).kp;
+    joint_data[(*motor_cmd).id - 1].kd = (*motor_cmd).kd;
 }
 
 int main(int argc, char **argv)

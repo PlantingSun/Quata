@@ -20,36 +20,36 @@ namespace controller
         tempA = (tempm - 2 * leg.endp_tar[0] * leg.rdif)
               / (2 * leg.uppleglen)
               - (leg.rdif - leg.endp_tar[0]);
-        tempB = - 2 * leg.endp_tar[2];
+        tempB = 2 * leg.endp_tar[2];
         tempC = (tempm - 2 * leg.endp_tar[0] * leg.rdif)
               / (2 * leg.uppleglen)
               + (leg.rdif - leg.endp_tar[0]);
         tempD = sqrt(tempB * tempB - 4 * tempA * tempC);
-        leg.joint_data[0].pos_tar = 2 * atan2(tempB + tempD, -2.0 * tempA);
-
-        tempA = (tempm + (leg.endp_tar[0] + sqr3 * leg.endp_tar[1]) * leg.rdif)
-              / (leg.uppleglen)
-              - 2 * leg.rdif
-              - (leg.endp_tar[0] + sqr3 * leg.endp_tar[1]);
-        tempB = - 4 * leg.endp_tar[2];
-        tempC = (tempm + (leg.endp_tar[0] + sqr3 * leg.endp_tar[1]) * leg.rdif)
-              / (leg.uppleglen)
-              + 2 * leg.rdif
-              + (leg.endp_tar[0] + sqr3 * leg.endp_tar[1]);
-        tempD = sqrt(tempB * tempB - 4 * tempA * tempC);
-        leg.joint_data[2].pos_tar = 2 * atan2(tempB + tempD, -2.0 * tempA);
+        leg.joint_data[0].pos_tar = 2 * atan((tempB - tempD)/(2.0 * tempA));
 
         tempA = (tempm + (leg.endp_tar[0] - sqr3 * leg.endp_tar[1]) * leg.rdif)
               / (leg.uppleglen)
               - 2 * leg.rdif
               - (leg.endp_tar[0] - sqr3 * leg.endp_tar[1]);
-        tempB = - 4 * leg.endp_tar[2];
+        tempB = 4 * leg.endp_tar[2];
         tempC = (tempm + (leg.endp_tar[0] - sqr3 * leg.endp_tar[1]) * leg.rdif)
               / (leg.uppleglen)
               + 2 * leg.rdif
               + (leg.endp_tar[0] - sqr3 * leg.endp_tar[1]);
         tempD = sqrt(tempB * tempB - 4 * tempA * tempC);
-        leg.joint_data[1].pos_tar = 2 * atan2(tempB + tempD, -2.0 * tempA);  
+        leg.joint_data[1].pos_tar = 2 * atan((tempB - tempD)/(2.0 * tempA));
+
+        tempA = (tempm + (leg.endp_tar[0] + sqr3 * leg.endp_tar[1]) * leg.rdif)
+              / (leg.uppleglen)
+              - 2 * leg.rdif
+              - (leg.endp_tar[0] + sqr3 * leg.endp_tar[1]);
+        tempB = 4 * leg.endp_tar[2];
+        tempC = (tempm + (leg.endp_tar[0] + sqr3 * leg.endp_tar[1]) * leg.rdif)
+              / (leg.uppleglen)
+              + 2 * leg.rdif
+              + (leg.endp_tar[0] + sqr3 * leg.endp_tar[1]);
+        tempD = sqrt(tempB * tempB - 4 * tempA * tempC);
+        leg.joint_data[2].pos_tar = 2 * atan((tempB - tempD)/(2.0 * tempA));
     }
 
     void Delta::ForwardKinematics(struct leg_data& leg)
@@ -135,6 +135,12 @@ namespace controller
         for(int i = 0;i < joint_num;i++)
         {
             std::cout<<body.leg.joint_data[i].pos_tar<<std::endl;
+            body.leg.joint_data[i].pos = body.leg.joint_data[i].pos_tar;
+        }
+        delta.ForwardKinematics(body.leg);
+        for(int i = 0;i < joint_num;i++)
+        {
+            std::cout<<body.leg.endp[i]<<std::endl;
         }
     }
 }
