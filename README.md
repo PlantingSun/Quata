@@ -4,7 +4,7 @@ QUAdruped robot with delTA.
 quata1.0 is a one-legged robot to test
 
 # How to start Simulation?
-**new:** git clone these into a src folder and you can run ./run_quota_sim.sh to start the simulation. 
+**new:** git clone these into a src folder and you can run ./run_quata_sim.sh to start the simulation. 
 
  1. make the Quata folder into a catkin workspace's src path, like `~/quata_ws/src/Quata`
  2. build the workspace and source
@@ -24,6 +24,12 @@ quata1.0 is a one-legged robot to test
   `backspace` button is used to restart the simulation
   You can add you own command by yourself.
   `Esc` button to stop the simulation.
+ 5. control by controller.
+ ```
+ # In ~/quata_ws
+ rosrun controller JumpController
+ ```
+
 # How to use ROS to communicate with it
 1. you can subscribe Imu data through "Imu" message type, "/bodyImu" topic.
 2. you can subscribe joint state data through "motor_data" message type, "/bodyMotor" topic.

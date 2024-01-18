@@ -5,6 +5,24 @@ namespace controller
 {
     /* for class Delta */
     /* private */
+    void Delta::VectorSub3(double* arr_front,double* arr_back,double* arr_out)
+    {
+        arr_out[0] = arr_front[0] - arr_back[0];
+        arr_out[1] = arr_front[1] - arr_back[1];
+        arr_out[2] = arr_front[2] - arr_back[2];
+    }
+
+    void Delta::CrossProduct3(double* arr_front,double* arr_back,double* arr_out)
+    {
+        arr_out[0] = arr_front[1] * arr_back[2] - arr_front[2] * arr_back[1];
+        arr_out[1] = arr_front[2] * arr_back[0] - arr_front[0] * arr_back[2];
+        arr_out[2] = arr_front[0] * arr_back[1] - arr_front[1] * arr_back[0];
+    }
+
+    double Delta::Norm3(double* arr)
+    {
+        return sqrt(arr[0]*arr[0] + arr[1]*arr[1] + arr[2]*arr[2]);
+    }
 
     /* public */
     void Delta::InverseKinematics(struct leg_data& leg)
@@ -61,12 +79,15 @@ namespace controller
         d1[0] = leg.rdif + leg.uppleglen * cos(leg.joint_data[0].pos);
         d1[1] = 0.0;
         d1[2] = leg.uppleglen * sin(leg.joint_data[0].pos);
-        d2[0] = -1 / 2 * (leg.rdif + leg.uppleglen * cos(leg.joint_data[1].pos));
-        d2[1] = sqr3 / 2 * (leg.rdif + leg.uppleglen * cos(leg.joint_data[1].pos));
+        d2[0] = -1.0 / 2.0 * (leg.rdif + leg.uppleglen * cos(leg.joint_data[1].pos));
+        d2[1] = sqr3 / 2.0 * (leg.rdif + leg.uppleglen * cos(leg.joint_data[1].pos));
         d2[2] = leg.uppleglen * sin(leg.joint_data[1].pos);
-        d3[0] = -1 / 2 * (leg.rdif + leg.uppleglen * cos(leg.joint_data[2].pos));
-        d3[1] = -sqr3 / 2 * (leg.rdif + leg.uppleglen * cos(leg.joint_data[2].pos));
+        d3[0] = -1.0 / 2.0 * (leg.rdif + leg.uppleglen * cos(leg.joint_data[2].pos));
+        d3[1] = -sqr3 / 2.0 * (leg.rdif + leg.uppleglen * cos(leg.joint_data[2].pos));
         d3[2] = leg.uppleglen * sin(leg.joint_data[2].pos);
+        printf("d1:%lf %lf %lf\n",d1[0],d1[1],d1[2]);
+        printf("d2:%lf %lf %lf\n",d2[0],d2[1],d2[2]);
+        printf("d3:%lf %lf %lf\n",d3[0],d3[1],d3[2]);
         VectorSub3(d2,d1,d1d2);
         VectorSub3(d3,d2,d2d3);
         VectorSub3(d3,d1,d1d3);
@@ -101,27 +122,7 @@ namespace controller
             op[i] = f[i] + fe[i] + ep[i];
             leg.endp[i] = op[i];
         }
-    }
-
-    /* private */
-    void Delta::VectorSub3(double* arr_front,double* arr_back,double* arr_out)
-    {
-        arr_out[0] = arr_front[0] - arr_back[0];
-        arr_out[1] = arr_front[1] - arr_back[1];
-        arr_out[2] = arr_front[2] - arr_back[2];
-    }
-
-    void Delta::CrossProduct3(double* arr_front,double* arr_back,double* arr_out)
-    {
-        arr_out[0] = arr_front[1] * arr_back[2] - arr_front[2] * arr_back[1];
-        arr_out[1] = arr_front[2] * arr_back[0] - arr_front[0] * arr_back[2];
-        arr_out[2] = arr_front[0] * arr_back[1] - arr_front[1] * arr_back[0];
-    }
-
-    double Delta::Norm3(double* arr)
-    {
-        return sqrt(arr[0]*arr[0] + arr[1]*arr[1] + arr[2]*arr[2]);
-    }
+    }  
 
     void JumpController::Get()
     {
@@ -135,13 +136,13 @@ namespace controller
         for(int i = 0;i < joint_num;i++)
         {
             std::cout<<body.leg.joint_data[i].pos_tar<<std::endl;
-            body.leg.joint_data[i].pos = body.leg.joint_data[i].pos_tar;
+            // body.leg.joint_data[i].pos = body.leg.joint_data[i].pos_tar;
         }
-        delta.ForwardKinematics(body.leg);
-        for(int i = 0;i < joint_num;i++)
-        {
-            std::cout<<body.leg.endp[i]<<std::endl;
-        }
+        // delta.ForwardKinematics(body.leg);
+        // for(int i = 0;i < joint_num;i++)
+        // {
+        //     std::cout<<body.leg.endp[i]<<std::endl;
+        // }
     }
 }
 
@@ -202,11 +203,14 @@ int main(int argc, char **argv)
         for(int i = 0;i < 3;i++)
         {
             motor_cmd.id = i + 1;
+            // motor_cmd.pos_tar = 5.0 * sin((double)countl / 100.0 * 6 * M_PI );
+            // motor_cmd.pos_tar = 2.0 * sin((double)countl / 100.0 * 2 * M_PI );
+            // motor_cmd.pos_tar = (double)i - 1.0;
             motor_cmd.pos_tar = 0.0;
             motor_cmd.vel_tar = 0.0;
             motor_cmd.tor_tar = 0.0;
-            motor_cmd.kp = 0.0;
-            motor_cmd.kd = 0.0;
+            motor_cmd.kp = 2.5;
+            motor_cmd.kd = 0.1;
             motor_pub.publish(motor_cmd);
         }
 

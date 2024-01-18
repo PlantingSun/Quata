@@ -33,16 +33,16 @@ class QuataSim(MuJoCoBase):
 		print('Total mass: ', totalMass)
 
 		# * Set subscriber and publisher
-		self.pubJoints = rospy.Publisher('/jointsPosVel', Float32MultiArray, queue_size=10)
-		self.pubPose = rospy.Publisher('/bodyPose', Pose, queue_size=10)
-		self.pubTwist = rospy.Publisher('/bodyTwist', Twist, queue_size=10)
+		# self.pubJoints = rospy.Publisher('/jointsPosVel', Float32MultiArray, queue_size=10)
+		# self.pubPose = rospy.Publisher('/bodyPose', Pose, queue_size=10)
+		# self.pubTwist = rospy.Publisher('/bodyTwist', Twist, queue_size=10)
 
 		self.pubImu = rospy.Publisher('/bodyImu', Imu, queue_size=10)
-		self.pubMotor = rospy.Publisher('/bodyMotor', motor_data, queue_size=10)
+		self.pubMotor = rospy.Publisher('/cybergear_msgs', motor_data, queue_size=10)
 
 		# subscribe joints torque and position
-		rospy.Subscriber("/jointsTorque", Float32MultiArray, self.controlCallback) 
-		rospy.Subscriber("/jointCmd", motor_data, self.run_motor_callback)
+		# rospy.Subscriber("/jointsTorque", Float32MultiArray, self.controlCallback) 
+		rospy.Subscriber("/cybergear_cmds", motor_data, self.run_motor_callback)
 		# rospy.Subscriber("/jointsTorque", Float32MultiArray, self.controlCallback) 
 		# * show the model
 		mj.mj_step(self.model, self.data)
@@ -70,11 +70,12 @@ class QuataSim(MuJoCoBase):
 		data = self.data
 		kp = msg.kp
 		kd = msg.kd
-		map_id_to_motor = [1, 7, 12]
+		map_id_to_motor = [0, 1, 7, 12]
 		motor_id = map_id_to_motor[msg.id]
 		data.qfrc_applied[motor_id] = msg.tor +\
   		kp*(msg.pos_tar - data.qpos[motor_id]) +\
     	kd*(msg.vel_tar - data.qvel[motor_id])
+		# print('I heard ',motor_id)
   
 	def reset(self):
 		# Set camera configuration
@@ -114,15 +115,15 @@ class QuataSim(MuJoCoBase):
 
 		# publish Motor data       ID :0~2 -> A B C
 		bodyMotor = [motor_data(), motor_data(), motor_data()]
-		bodyMotor[0].id = 0
+		bodyMotor[0].id = 1
 		bodyMotor[0].pos = self.data.sensor('JointAPos').data.copy()
 		bodyMotor[0].vel = self.data.sensor('JointAVel').data.copy()
 		bodyMotor[0].tor = self.data.sensor('JointATor').data.copy()
-		bodyMotor[1].id = 1
+		bodyMotor[1].id = 2
 		bodyMotor[1].pos = self.data.sensor('JointBPos').data.copy()
 		bodyMotor[1].vel = self.data.sensor('JointBVel').data.copy()
 		bodyMotor[1].tor = self.data.sensor('JointBTor').data.copy()
-		bodyMotor[2].id = 2
+		bodyMotor[2].id = 3
 		bodyMotor[2].pos = self.data.sensor('JointCPos').data.copy()
 		bodyMotor[2].vel = self.data.sensor('JointCVel').data.copy()
 		bodyMotor[2].tor = self.data.sensor('JointCTor').data.copy()
@@ -170,16 +171,6 @@ class QuataSim(MuJoCoBase):
 	# 	add_overlay(bottomLeft,"Start simulation","space",)
 
 	# def publishMotorCmd(self, data):
-	
-	def controller_test(self, data):
-		motorData = motor_data()
-		motorData.id = 0
-		motorData.pos_tar = -1
-		motorData.vel_tar = 0.0
-		motorData.kp = 10.0
-		motorData.kd = 0.1
-		motorData.tor = 0.0
-		self.pubMotor.publish(motorData)
   
   
 	def simulate(self):
