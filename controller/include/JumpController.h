@@ -35,6 +35,7 @@ namespace controller{
         double endp[3],endv[3],endf[3];
         double endp_tar[3],endv_tar[3],endf_tar[3];
         double biospos[3];
+        double Jacob[3][3];
 
         double rbody,rfoot,rdif;
         double uppleglen,lowleglen;
@@ -50,14 +51,15 @@ namespace controller{
     /* Delta mechanism */
     class Delta{
         public:
-        void InverseKinematics(struct leg_data& leg);
-        void ForwardKinematics(struct leg_data& leg);
-
+            void InverseKinematics(struct leg_data& leg);
+            void ForwardKinematics(struct leg_data& leg);
+            void Statics(struct leg_data& leg);
         private:
-        void VectorSub3(double* arr_front,double* arr_back,double* arr_out);
-        void CrossProduct3(double* arr_front,double* arr_back,double* arr_out);
-        double Norm3(double* arr);
-        const double sqr3 = 1.73205081;
+            void VectorSub3(double* arr_front,double* arr_back,double* arr_out);
+            void CrossProduct3(double* arr_front,double* arr_back,double* arr_out);
+            void InverseMatrix33(double (*mat_in)[3],double (*mat_out)[3]);
+            double Norm3(double* arr);
+            const double sqr3 = 1.73205081;
     };
 
     class JumpController{
