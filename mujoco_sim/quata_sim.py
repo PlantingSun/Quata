@@ -38,13 +38,19 @@ class QuataSim(MuJoCoBase):
 		# self.pubTwist = rospy.Publisher('/bodyTwist', Twist, queue_size=10)
 
 		self.pubImu = rospy.Publisher('/bodyImu', Imu, queue_size=10)
+		# self.pubMotor = rospy.Publisher('/bodyMotor', motor_data, queue_size=10)
 		self.pubMotor = rospy.Publisher('/cybergear_msgs', motor_data, queue_size=10)
 
+  
 		# subscribe joints torque and position
 		# rospy.Subscriber("/jointsTorque", Float32MultiArray, self.controlCallback) 
 		rospy.Subscriber("/cybergear_cmds", motor_data, self.run_motor_callback)
 		# rospy.Subscriber("/jointsTorque", Float32MultiArray, self.controlCallback) 
-		# * show the model
+		# rospy.Subscriber("/jointCmd", motor_data, self.run_motor_callback)
+		# rospy.Subscriber("/jointsTorque", Float32MultiArray, self.controlCallback) 
+		listen_theread = threading.Thread(target=self.start_subscribe)
+		listen_theread.start()
+  		# * show the model
 		mj.mj_step(self.model, self.data)
 		# enable contact force visualization
 		self.opt.flags[mj.mjtVisFlag.mjVIS_CONTACTFORCE] = True
@@ -172,11 +178,20 @@ class QuataSim(MuJoCoBase):
 
 	# def publishMotorCmd(self, data):
   
-  
+	def start_subscribe(self):
+		rospy.Subscriber("/cybergear_cmds", motor_data, self.run_motor_callback)
+		rospy.spin()
+	
+	def controller_test(self, data):
+		f = 5
+		data.qfrc_applied[1] = f
+		data.qfrc_applied[7] = f
+		data.qfrc_applied[12] = f
+
+ 
 	def simulate(self):
 		print("-----------------------")
 
-		# self.test_ros_publish()
 		# input()
 		while not glfw.window_should_close(self.window):
 			simstart = self.data.time
@@ -191,7 +206,8 @@ class QuataSim(MuJoCoBase):
 				
 				# self.controller_test(self.data)
 				# self.test_ros_publish()
-
+				# rospy.spin
+    
 				# sleep untile 2ms don't use rospy.Rate
 				while (glfw.get_time() - now) < 0.00099:
 					pass

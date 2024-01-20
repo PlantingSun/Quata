@@ -25,6 +25,7 @@ namespace controller
     }
 
     /* public */
+    //use data from body.leg.endp_tar[] and output to body.leg.joint_data[].pos_tar
     void Delta::InverseKinematics(struct leg_data& leg)
     {
         double tempm,tempA,tempB,tempC,tempD;
@@ -70,6 +71,7 @@ namespace controller
         leg.joint_data[2].pos_tar = 2 * atan((tempB - tempD)/(2.0 * tempA));
     }
 
+    //use data from leg.joint_data[].pos and output to leg.endp
     void Delta::ForwardKinematics(struct leg_data& leg)
     {
         double a,b,c,p,s,lde,ld2f,lfe,lep;
@@ -124,15 +126,19 @@ namespace controller
         }
     }  
 
+    //
     void JumpController::Get()
     {
+        cout << "Get" << endl;
         delta.ForwardKinematics(body.leg);
+        cout << "end position:" << endl;
         for(int i = 0;i < joint_num;i++)
         {
             std::cout<<body.leg.endp[i]<<std::endl;
             body.leg.endp_tar[i] = body.leg.endp[i];
         }
         delta.InverseKinematics(body.leg);
+        cout << "joint position:" << endl;
         for(int i = 0;i < joint_num;i++)
         {
             std::cout<<body.leg.joint_data[i].pos_tar<<std::endl;
@@ -168,6 +174,7 @@ void motorCallback(const can::motor_data::ConstPtr& motor_msg,controller::motor_
     joint_data[(*motor_msg).id - 1].tem = (*motor_msg).tem;
 }
 
+
 int main(int argc, char **argv)
 {
     /* variables */
@@ -193,12 +200,26 @@ int main(int argc, char **argv)
     controller::JumpController jc(62.5,40,110,250,joint,jointnum);
     can::motor_data motor_cmd;
 
+    //test
+    //fk: leg.joint_data[].pos and output to leg.endp
+    jc.body.leg.joint_data[0].pos = 1;
+    jc.body.leg.joint_data[1].pos = 1;
+    jc.body.leg.joint_data[2].pos = 1;
+    jc.Get();
+    // system("pause");
+
+    cout << 111111 << endl;
     /* loop */
+    double cc = -1, plus = 0.1;
     while (ros::ok())
-    {
+    {   
+        cout << 222222 << endl;
+        cc += plus;
+        if (cc > 1 || cc < -1)
+            plus = -plus;
+
+
         ros::spinOnce();
-        
-        jc.Get();
 
         for(int i = 0;i < 3;i++)
         {
@@ -206,22 +227,23 @@ int main(int argc, char **argv)
             // motor_cmd.pos_tar = 5.0 * sin((double)countl / 100.0 * 6 * M_PI );
             // motor_cmd.pos_tar = 2.0 * sin((double)countl / 100.0 * 2 * M_PI );
             // motor_cmd.pos_tar = (double)i - 1.0;
-            motor_cmd.pos_tar = 0.0;
+            motor_cmd.pos_tar = 1;
             motor_cmd.vel_tar = 0.0;
             motor_cmd.tor_tar = 0.0;
             motor_cmd.kp = 2.5;
             motor_cmd.kd = 0.1;
             motor_pub.publish(motor_cmd);
         }
-
+        cout << 33333 << endl;
         countl++;
         if(countl == loop_hz)
         {
             countl = 0;
             ROS_INFO("One Loop");
         }
-
+        cout << 44444 << endl;
         loop_rate.sleep();
+        cout << 55555 << endl;
     }
 
     return 0;

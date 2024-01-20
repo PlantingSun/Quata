@@ -21,6 +21,7 @@
 #include <unistd.h>
 
 #include "can/motor_data.h"
+using namespace std;
 
 namespace controller{
     struct motor_data{
@@ -32,11 +33,11 @@ namespace controller{
     struct leg_data{
         motor_data* joint_data;
         
-        double endp[3],endv[3],endf[3];
+        double endp[3],endv[3],endf[3]; 
         double endp_tar[3],endv_tar[3],endf_tar[3];
-        double biospos[3];
+        double biospos[3];  //bios from leg center to body center 
 
-        double rbody,rfoot,rdif;
+        double rbody,rfoot,rdif;    //radius of body,foot,difference
         double uppleglen,lowleglen;
     };
 
@@ -75,7 +76,7 @@ namespace controller{
             }
             void Get();
             void Init();
-        private:
+        // private:
 
         uint16_t joint_num;
         controller::body_data body;
