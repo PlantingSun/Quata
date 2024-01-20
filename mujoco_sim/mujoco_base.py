@@ -42,6 +42,7 @@ class MuJoCoBase():
         if act == glfw.PRESS and key == glfw.KEY_BACKSPACE:
             mj.mj_resetData(self.model, self.data)
             mj.mj_forward(self.model, self.data)
+            self.reset()
         elif act ==glfw.PRESS and key== glfw.KEY_SPACE:
             self.pause_flag = not self.pause_flag
             mj.mj_forward(self.model, self.data)

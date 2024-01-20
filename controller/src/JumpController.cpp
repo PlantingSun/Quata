@@ -87,9 +87,9 @@ namespace controller
         d3[0] = -1.0 / 2.0 * (leg.rdif + leg.uppleglen * cos(leg.joint_data[2].pos));
         d3[1] = -sqr3 / 2.0 * (leg.rdif + leg.uppleglen * cos(leg.joint_data[2].pos));
         d3[2] = leg.uppleglen * sin(leg.joint_data[2].pos);
-        printf("d1:%lf %lf %lf\n",d1[0],d1[1],d1[2]);
-        printf("d2:%lf %lf %lf\n",d2[0],d2[1],d2[2]);
-        printf("d3:%lf %lf %lf\n",d3[0],d3[1],d3[2]);
+        // printf("d1:%lf %lf %lf\n",d1[0],d1[1],d1[2]);
+        // printf("d2:%lf %lf %lf\n",d2[0],d2[1],d2[2]);
+        // printf("d3:%lf %lf %lf\n",d3[0],d3[1],d3[2]);
         VectorSub3(d2,d1,d1d2);
         VectorSub3(d3,d2,d2d3);
         VectorSub3(d3,d1,d1d3);
@@ -135,7 +135,7 @@ namespace controller
         for(int i = 0;i < joint_num;i++)
         {
             std::cout<<body.leg.endp[i]<<std::endl;
-            body.leg.endp_tar[i] = body.leg.endp[i];
+            // body.leg.endp_tar[i] = body.leg.endp[i];
         }
         delta.InverseKinematics(body.leg);
         cout << "joint position:" << endl;
@@ -174,11 +174,24 @@ void motorCallback(const can::motor_data::ConstPtr& motor_msg,controller::motor_
     joint_data[(*motor_msg).id - 1].tem = (*motor_msg).tem;
 }
 
+void ik(controller::JumpController jc)
+{
+    jc.delta.InverseKinematics(jc.body.leg);
+    cout << "Target joint position:" << endl;
+    for(int i = 0;i < jc.joint_num;i++)
+    {
+        std::cout<<jc.body.leg.joint_data[i].pos_tar<<std::endl;
+        // body.leg.joint_data[i].pos = body.leg.joint_data[i].pos_tar;
+    }
+    printf("\n\n");
+}
+
+
 
 int main(int argc, char **argv)
 {
     /* variables */
-    int countl = 0, loop_hz = 100;
+    int countl = 0, loop_hz = 10;
     const uint16_t jointnum = 3;
     controller::motor_data joint[jointnum];
 
@@ -198,52 +211,67 @@ int main(int argc, char **argv)
     /* Initial */
     InitJoint(joint,jointnum);
     controller::JumpController jc(62.5,40,110,250,joint,jointnum);
-    can::motor_data motor_cmd;
+    can::motor_data motor_cmd[3];
 
     //test
     //fk: leg.joint_data[].pos and output to leg.endp
-    jc.body.leg.joint_data[0].pos = 1;
-    jc.body.leg.joint_data[1].pos = 1;
-    jc.body.leg.joint_data[2].pos = 1;
-    jc.Get();
+    //ik: body.leg.endp_tar[3] to body.leg.joint_data[].pos_tar
+    
+
+    jc.delta.InverseKinematics(jc.body.leg);
+    cout << "joint position:" << endl;
+    for(int i = 0;i < 3;i++)
+    {
+        std::cout<<jc.body.leg.joint_data[i].pos_tar<<std::endl;
+        // body.leg.joint_data[i].pos = body.leg.joint_data[i].pos_tar;
+    }
     // system("pause");
 
-    cout << 111111 << endl;
+    // cout << 111111 << endl;
     /* loop */
-    double cc = -1, plus = 0.1;
+    double KP = 1, plus = 0.1;
+    double x_start = -0.3, x_end = -0.31, duration = 5000,xcur = x_start;
+    int x = 0;
     while (ros::ok())
     {   
-        cout << 222222 << endl;
-        cc += plus;
-        if (cc > 1 || cc < -1)
-            plus = -plus;
-
+        // if(x++ > 200)
+        //     return 0;
+        // if(xcur != x_end)
+        //     xcur += (x_end - x_start) / duration;
 
         ros::spinOnce();
 
+        jc.body.leg.endp_tar[0] = 0.5;
+        jc.body.leg.endp_tar[1] = 0;
+        jc.body.leg.endp_tar[2] = 250;
+        // cout << xcur << endl;
+        // ik(jc);
+
+        // jc.Get();
+
+        // motor_cmd[0].pos_tar = 0.0;
+        // motor_cmd[1].pos_tar = 1;
+        // motor_cmd[2].pos_tar = 0;
+
+        
         for(int i = 0;i < 3;i++)
         {
-            motor_cmd.id = i + 1;
-            // motor_cmd.pos_tar = 5.0 * sin((double)countl / 100.0 * 6 * M_PI );
-            // motor_cmd.pos_tar = 2.0 * sin((double)countl / 100.0 * 2 * M_PI );
-            // motor_cmd.pos_tar = (double)i - 1.0;
-            motor_cmd.pos_tar = 1;
-            motor_cmd.vel_tar = 0.0;
-            motor_cmd.tor_tar = 0.0;
-            motor_cmd.kp = 2.5;
-            motor_cmd.kd = 0.1;
-            motor_pub.publish(motor_cmd);
+            motor_cmd[i].id = i+1;
+            // motor_cmd[i].pos_tar = jc.body.leg.joint_data[i].pos_tar;
+            motor_cmd[i].pos_tar = 1;
+            motor_cmd[i].vel_tar = 0.0;
+            motor_cmd[i].tor_tar = 0.0;
+            motor_cmd[i].kp = 5;
+            motor_cmd[i].kd = 0.1;
+            motor_pub.publish(motor_cmd[i]);
         }
-        cout << 33333 << endl;
         countl++;
         if(countl == loop_hz)
         {
             countl = 0;
             ROS_INFO("One Loop");
         }
-        cout << 44444 << endl;
         loop_rate.sleep();
-        cout << 55555 << endl;
     }
 
     return 0;

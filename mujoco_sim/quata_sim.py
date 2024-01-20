@@ -13,6 +13,9 @@ import threading
 
 
 class QuataSim(MuJoCoBase):
+	motor_cmd = [motor_data() for _ in range(4)]	#store motor_cmd
+	map_id_to_motor = [0, 1, 7, 12]
+
 	def __init__(self, xml_path):
 		super().__init__(xml_path)
 		self.simend = 1000.0
@@ -24,7 +27,7 @@ class QuataSim(MuJoCoBase):
 		# mj.set_mjcb_control(self.controller)
 		# Set initial joint positions
 		self.data.qpos[-10:] = np.array([ 0.0, 0.0, -0.52, 1.04, -0.52, 
-		                                 0.0, 0.0, 0.52, -1.04, 0.52])
+											0.0, 0.0, 0.52, -1.04, 0.52])
 		# self.data.qpos[1] = np.array(-1)
 		# self.data.qpos[7] = np.array(-1)
 		# self.data.qpos[12] = np.array(-1)
@@ -39,18 +42,18 @@ class QuataSim(MuJoCoBase):
 
 		self.pubImu = rospy.Publisher('/bodyImu', Imu, queue_size=10)
 		# self.pubMotor = rospy.Publisher('/bodyMotor', motor_data, queue_size=10)
-		self.pubMotor = rospy.Publisher('/cybergear_msgs', motor_data, queue_size=10)
+		self.pubMotor = rospy.Publisher('/cybergear_msgs', motor_data, queue_size=1)
 
-  
+
 		# subscribe joints torque and position
 		# rospy.Subscriber("/jointsTorque", Float32MultiArray, self.controlCallback) 
-		rospy.Subscriber("/cybergear_cmds", motor_data, self.run_motor_callback)
+		rospy.Subscriber("/cybergear_cmds", motor_data, self.run_motor_callback, queue_size=1)
 		# rospy.Subscriber("/jointsTorque", Float32MultiArray, self.controlCallback) 
 		# rospy.Subscriber("/jointCmd", motor_data, self.run_motor_callback)
 		# rospy.Subscriber("/jointsTorque", Float32MultiArray, self.controlCallback) 
 		listen_theread = threading.Thread(target=self.start_subscribe)
 		listen_theread.start()
-  		# * show the model
+		# * show the model
 		mj.mj_step(self.model, self.data)
 		# enable contact force visualization
 		self.opt.flags[mj.mjtVisFlag.mjVIS_CONTACTFORCE] = True
@@ -64,6 +67,14 @@ class QuataSim(MuJoCoBase):
 							mj.mjtCatBit.mjCAT_ALL.value, self.scene)
 		mj.mjr_render(viewport, self.scene, self.context)
 
+		#init motor_cmd 
+		for i in range(1,4):
+			self.motor_cmd[i].pos_tar = 0.0
+			self.motor_cmd[i].vel_tar = 0.0
+			self.motor_cmd[i].tor_tar = 0.0
+			self.motor_cmd[i].kp = 5
+			self.motor_cmd[i].kd = 0.1
+
  
 	def controlCallback(self, data):
 		d = list(data.data[:])
@@ -73,15 +84,9 @@ class QuataSim(MuJoCoBase):
 		'''subscribe motor command data and apply it to the model
 			id[0]->qpos[1], id[1]->qpos[7], id[2]->qpos[12]
      	'''
-		data = self.data
-		kp = msg.kp
-		kd = msg.kd
-		map_id_to_motor = [0, 1, 7, 12]
-		motor_id = map_id_to_motor[msg.id]
-		data.qfrc_applied[motor_id] = msg.tor +\
-  		kp*(msg.pos_tar - data.qpos[motor_id]) +\
-    	kd*(msg.vel_tar - data.qvel[motor_id])
-		# print('I heard ',motor_id)
+		print("Python heard")
+		id = msg.id
+		self.motor_cmd[id] = msg
   
 	def reset(self):
 		# Set camera configuration
@@ -89,6 +94,13 @@ class QuataSim(MuJoCoBase):
 		self.cam.elevation = -11.588379
 		self.cam.distance = 5.0
 		self.cam.lookat = np.array([0.0, 0.0, 1.5])
+		#init motor_cmd 
+		for i in range(1,4):
+			self.motor_cmd[i].pos_tar = 0.0
+			self.motor_cmd[i].vel_tar = 0.0
+			self.motor_cmd[i].tor_tar = 0.0
+			self.motor_cmd[i].kp = 5
+			self.motor_cmd[i].kd = 0.1
 	
 	# def controller(self, model, data):
   	#   	self.data.ctrl[0] = 100
@@ -188,6 +200,16 @@ class QuataSim(MuJoCoBase):
 		data.qfrc_applied[7] = f
 		data.qfrc_applied[12] = f
 
+	def apply_force(self):
+		for i in range(1, 4):
+			msg = self.motor_cmd[i]
+			kp = msg.kp
+			kd = msg.kd
+			motor_id = self.map_id_to_motor[i]
+			self.data.qfrc_applied[motor_id] = msg.tor_tar +\
+			kp*(msg.pos_tar - self.data.qpos[motor_id]) +\
+			kd*(msg.vel_tar - self.data.qvel[motor_id])
+		
  
 	def simulate(self):
 		print("-----------------------")
@@ -197,17 +219,21 @@ class QuataSim(MuJoCoBase):
 			simstart = self.data.time
 			while (self.data.time - simstart <= 1.0/60.0 and not self.pause_flag):
 				# get current absolute time 
-				now = glfw.get_time()			
+				now = glfw.get_time()		
+
+				#apply force to motor
+				self.apply_force()
+    	
 				# Step simulation environment
 				mj.mj_step(self.model, self.data)
 		
 				# * Publish joint positions and velocities
 				self.get_sensor_data_and_publish()
-				
-				# self.controller_test(self.data)
-				# self.test_ros_publish()
-				# rospy.spin
-    
+				# print("python publish")
+
+				#print motor force
+				# print(self.data.qfrc_actuator)
+
 				# sleep untile 2ms don't use rospy.Rate
 				while (glfw.get_time() - now) < 0.00099:
 					pass
