@@ -211,13 +211,12 @@ class QuataSim(MuJoCoBase):
 			self.motor_cmd[i].pos_tar = 0
 			self.motor_cmd[i].vel_tar = 0.0
 			self.motor_cmd[i].tor_tar = 0.0
-			self.motor_cmd[i].kp = 20
+			self.motor_cmd[i].kp = 5
 			self.motor_cmd[i].kd = 0.05
-
-		self.data.qvel[1] = -1
-		self.data.qpos[1] = -2
+		
 	
 	def controller(self,data):
+		self.get_max_geight(self.data)
         #velocity control PD
 		tar_pos = 0
 		cur_pos = data.qpos[1]
@@ -251,6 +250,7 @@ class QuataSim(MuJoCoBase):
 	
 	_increse = 0
 	top_height = -1
+	last = 0
 	def get_max_geight(self,data):
 		# print("position of base body:",data.xpos[1])
 		#use current max_height renew max_height only when current_height is become larger
@@ -268,7 +268,10 @@ class QuataSim(MuJoCoBase):
  
  
 	def simulate(self):
-		print("-----------------------")
+		print("close the following lines to delete intiate pos and vel")
+		self.data.qpos[1] = -2	#init x position
+		self.data.qvel[1] = -1	#init x velocity
+
 		
 		
 		while not glfw.window_should_close(self.window):
@@ -278,25 +281,19 @@ class QuataSim(MuJoCoBase):
 				# get current absolute time 
 				now = glfw.get_time()		
 				
-				#controller
-				self.get_max_geight(self.data)
+#*********************open this to run controller***********************
 				self.controller(self.data)
 
 
 				#apply force to motor
 				self.apply_force()
 
-				# print("*********")
-				# print(self.data.sensor('touchSensor').data.copy())
+				# print("ground force:", self.data.sensor('touchSensor').data.copy())
 				# Step simulation environment
 				mj.mj_step(self.model, self.data)
 		
 				# * Publish joint positions and velocities
 				self.get_sensor_data_and_publish()
-
-				# * Publish force		
-				# print(' Contact force on End', self.data.cfrc_ext[6])
-				# print('norm', np.sqrt(np.sum(np.square(self.data.cfrc_ext[6]))))
 					
 
 				# sleep untile 2ms don't use rospy.Rate

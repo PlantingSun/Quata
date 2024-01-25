@@ -1,3 +1,10 @@
+#How to open plane PD controler in python?
+open this   "self.controller(self.data)" around line 280
+#How to change initial position and velocity?
+change this around line 270:
+self.data.qpos[1] = -2	#init x position
+self.data.qvel[1] = -1	#init x velocity
+
 # Quata
 QUAdruped robot with delTA.
 
