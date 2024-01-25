@@ -42,6 +42,7 @@ namespace controller{
         double uppleglen,lowleglen;
     };
 
+    //body:pos + theta; leg:end data
     struct body_data{
         leg_data leg;
 

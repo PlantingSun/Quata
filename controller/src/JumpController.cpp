@@ -31,7 +31,7 @@ namespace controller
             tempdet+= mat_in[0][i] * mat_in[1][tempi1] * mat_in[2][tempi2];
             tempdet-= mat_in[0][i] * mat_in[2][tempi1] * mat_in[1][tempi2];
         }
-        printf("%lf\n",tempdet);
+        // printf("%lf\n",tempdet);
         for(int i = 0;i < 3;i++)
             for(int j = 0;j < 3;j++)
             {
@@ -96,7 +96,7 @@ namespace controller
         leg.joint_data[2].pos_tar = 2.0 * atan((- tempB - tempD)/(2.0 * tempA));
     }
 
-    //use data from leg.joint_data[].pos and output to leg.endp
+    //use data from leg.joint_data[i].pos and output to leg.endp[i]
     void Delta::ForwardKinematics(struct leg_data& leg)
     {
         double a,b,c,p,s,lde,ld2f,lfe,lep;
@@ -148,6 +148,7 @@ namespace controller
         }
     }
 
+    //get data from leg.endf_tar[i] to leg.joint_data[i].tor_tar
     void Delta::Statics(struct leg_data& leg)
     {
         double tempm,tempA,tempB,tempC,tempD,tempE;
@@ -275,21 +276,21 @@ namespace controller
         }
 
         InverseMatrix33(tempJ,leg.Jacob);
-        for(int i = 0;i < 3;i++)
-        {
-            for(int j = 0;j < 3;j++)
-                printf("%lf ",tempJ[i][j]);
-            printf("\n");
-        }
+        // for(int i = 0;i < 3;i++)
+        // {
+        //     for(int j = 0;j < 3;j++)
+        //         printf("%lf ",tempJ[i][j]);
+        //     printf("\n");
+        // }
         for(int i = 0;i < 3;i++)
         {
             leg.joint_data[i].tor_tar = 0.0;
             for(int j = 0;j < 3;j++)
             {
-                printf("%lf ",leg.Jacob[i][j]);
+                // printf("%lf ",leg.Jacob[i][j]);
                 leg.joint_data[i].tor_tar+= leg.Jacob[j][i] * leg.endf_tar[j] / 1000.0;
             }
-            printf("\n");
+            // printf("\n");
         }
     }
 
@@ -304,21 +305,17 @@ namespace controller
             std::cout<<body.leg.endp[i]<<std::endl;
             // body.leg.endp_tar[i] = body.leg.endp[i];
         }
-        body.leg.endf_tar[0] = 0.0;
-        body.leg.endf_tar[1] = 0.0;
-        body.leg.endf_tar[2] = 13.0;
-        delta.Statics(body.leg);
-        delta.InverseKinematics(body.leg);
-<<<<<<< HEAD
-        cout << "joint position:" << endl;
-=======
-
->>>>>>> eee3ba511531791e417099d25c8b16f7abbee319
-        for(int i = 0;i < joint_num;i++)
-        {
-            std::cout<<body.leg.joint_data[i].pos_tar<<
-            " "<<body.leg.joint_data[i].tor_tar<<std::endl;
-        }
+        // body.leg.endf_tar[0] = 0.0;
+        // body.leg.endf_tar[1] = 0.0;
+        // body.leg.endf_tar[2] = 13.0;
+        // delta.Statics(body.leg);
+        // delta.InverseKinematics(body.leg);
+        // cout << "joint position:" << endl;
+        // for(int i = 0;i < joint_num;i++)
+        // {
+        //     std::cout<<body.leg.joint_data[i].pos_tar<<
+        //     " "<<body.leg.joint_data[i].tor_tar<<std::endl;
+        // }
     }
 }
 
@@ -334,26 +331,45 @@ void InitJoint(controller::motor_data* joint_data,uint16_t joint_num)
 
 void motorCallback(const can::motor_data::ConstPtr& motor_msg,controller::motor_data* joint_data)
 {
-    ROS_INFO("I heard");
+
+        ROS_INFO("I heard");
     printf("ID:%d\n",(*motor_msg).id);
     printf("pos:%lf  vel:%lf\n",(*motor_msg).pos,(*motor_msg).vel);
-    printf("tor:%lf  tem:%lf\n",(*motor_msg).tor,(*motor_msg).tem);
+    printf("tor:%lf\n",(*motor_msg).tor);
+
     joint_data[(*motor_msg).id - 1].pos = (*motor_msg).pos;
     joint_data[(*motor_msg).id - 1].vel = (*motor_msg).vel;
     joint_data[(*motor_msg).id - 1].tor = (*motor_msg).tor;
     joint_data[(*motor_msg).id - 1].tem = (*motor_msg).tem;
 }
 
-void ik(controller::JumpController jc)
+void ik(controller::JumpController& jc)
 {
     jc.delta.InverseKinematics(jc.body.leg);
-    cout << "Target joint position:" << endl;
+    // cout << "Target joint position:" << endl;
     for(int i = 0;i < jc.joint_num;i++)
     {
-        std::cout<<jc.body.leg.joint_data[i].pos_tar<<std::endl;
+        // std::cout<<jc.body.leg.joint_data[i].pos_tar<<std::endl;
         // body.leg.joint_data[i].pos = body.leg.joint_data[i].pos_tar;
     }
-    printf("\n\n");
+    // printf("\n\n");
+}
+double pos = 230, _add = 0.5;
+void cal_force(controller::JumpController& jc)
+{
+    if(pos > 300 || pos < 200)
+        _add = -_add;
+    pos += _add;
+    // cout << endl ;
+    double kp = 0.01, tar_pos = 280;
+    jc.delta.ForwardKinematics(jc.body.leg);
+    double f = kp*(tar_pos - jc.body.leg.endp[2]);
+    // cout << "f:" << f << endl;
+    jc.body.leg.endf_tar[2] = f;
+    jc.delta.Statics(jc.body.leg);
+    // cout << "Target joint torque:" << endl;
+    // for(int i = 0;i < 3;i++)
+        // cout << jc.body.leg.joint_data[i].tor_tar << endl;
 }
 
 
@@ -361,11 +377,7 @@ void ik(controller::JumpController jc)
 int main(int argc, char **argv)
 {
     /* variables */
-<<<<<<< HEAD
     int countl = 0, loop_hz = 10;
-=======
-    int countl = 0, loop_hz = 1;
->>>>>>> eee3ba511531791e417099d25c8b16f7abbee319
     const uint16_t jointnum = 3;
     controller::motor_data joint[jointnum];
 
@@ -384,7 +396,6 @@ int main(int argc, char **argv)
 
     /* Initial */
     InitJoint(joint,jointnum);
-<<<<<<< HEAD
     controller::JumpController jc(62.5,40,110,250,joint,jointnum);
     can::motor_data motor_cmd[3];
 
@@ -397,73 +408,58 @@ int main(int argc, char **argv)
     cout << "joint position:" << endl;
     for(int i = 0;i < 3;i++)
     {
-        std::cout<<jc.body.leg.joint_data[i].pos_tar<<std::endl;
+        // std::cout<<jc.body.leg.joint_data[i].pos_tar<<std::endl;
         // body.leg.joint_data[i].pos = body.leg.joint_data[i].pos_tar;
     }
     // system("pause");
-=======
-    controller::JumpController jc(62.5,40.0,110.0,250.0,joint,jointnum);
-    can::motor_data motor_cmd;
->>>>>>> eee3ba511531791e417099d25c8b16f7abbee319
 
     // cout << 111111 << endl;
     /* loop */
     double KP = 1, plus = 0.1;
     double x_start = -0.3, x_end = -0.31, duration = 5000,xcur = x_start;
-    int x = 0;
+    int x = 0, kp_height = 10,f;
     while (ros::ok())
     {   
-        // if(x++ > 200)
-        //     return 0;
-        // if(xcur != x_end)
-        //     xcur += (x_end - x_start) / duration;
-
+        
         ros::spinOnce();
-<<<<<<< HEAD
-=======
 
-        for(int i = 0;i < 3;i++)
-        {
-            joint[i].pos = 0.1 * (double)i;
-        }
+        cal_force(jc);
 
-        jc.Get();
->>>>>>> eee3ba511531791e417099d25c8b16f7abbee319
+        // jc.delta.ForwardKinematics(jc.body.leg)
+        // cout << "pure height" <<  << endl;
+        // printf("joint position:%lf %lf %lf\n",joint[0].pos,joint[1].pos,joint[2].pos);
+        // printf("body position:%lf %lf %lf\n",jc.body.leg.endp[0],jc.body.leg.endp[1],jc.body.leg.endp[2]);")
 
-        jc.body.leg.endp_tar[0] = 0.5;
-        jc.body.leg.endp_tar[1] = 0;
-        jc.body.leg.endp_tar[2] = 250;
-        // cout << xcur << endl;
+        // jc.body.leg.endp_tar[0] = 0;
+        // jc.body.leg.endp_tar[1] = 0;
+        // jc.body.leg.endp_tar[2] = 250;
+        // // cout << xcur << endl;
         // ik(jc);
 
-        // jc.Get();
-
-        // motor_cmd[0].pos_tar = 0.0;
-        // motor_cmd[1].pos_tar = 1;
-        // motor_cmd[2].pos_tar = 0;
-
-        
         for(int i = 0;i < 3;i++)
         {
-<<<<<<< HEAD
             motor_cmd[i].id = i+1;
             // motor_cmd[i].pos_tar = jc.body.leg.joint_data[i].pos_tar;
-            motor_cmd[i].pos_tar = 1;
+            motor_cmd[i].pos_tar = 0;
             motor_cmd[i].vel_tar = 0.0;
-            motor_cmd[i].tor_tar = 0.0;
+            // motor_cmd[i].tor_tar = jc.body.leg.joint_data[i].tor_tar;
+            motor_cmd[i].tor_tar = 0;
             motor_cmd[i].kp = 5;
             motor_cmd[i].kd = 0.1;
             motor_pub.publish(motor_cmd[i]);
-=======
-            motor_cmd.id = i + 1;
-            motor_cmd.pos_tar = 0.0;
-            motor_cmd.vel_tar = 0.0;
-            motor_cmd.tor_tar = 0.0;
-            motor_cmd.kp = 2.5;
-            motor_cmd.kd = 0.0;
-            motor_pub.publish(motor_cmd);
->>>>>>> eee3ba511531791e417099d25c8b16f7abbee319
         }
+        
+        // for(int i = 0;i < 3;i++)
+        // {
+        //     motor_cmd[i].id = i+1;
+        //     // motor_cmd[i].pos_tar = jc.body.leg.joint_data[i].pos_tar;
+        //     motor_cmd[i].pos_tar = 1;
+        //     motor_cmd[i].vel_tar = 0.0;
+        //     motor_cmd[i].tor_tar = 0.0;
+        //     motor_cmd[i].kp = 50;
+        //     motor_cmd[i].kd = 0.2;
+        //     motor_pub.publish(motor_cmd[i]);
+        // }
         countl++;
         if(countl == loop_hz)
         {

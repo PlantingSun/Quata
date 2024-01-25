@@ -34,3 +34,13 @@ quata1.0 is a one-legged robot to test
 1. you can subscribe Imu data through "Imu" message type, "/bodyImu" topic.
 2. you can subscribe joint state data through "motor_data" message type, "/bodyMotor" topic.
 3. you can publish joint command data through "motor_data" message type, "/jointCmd" topic.
+
+data:
+//use data from leg.joint_data[i].pos and output to leg.endp[i]
+    void Delta::ForwardKinematics(struct leg_data& leg)
+
+//use data from body.leg.endp_tar[] and output to body.leg.joint_data[].pos_tar
+    void Delta::InverseKinematics(struct leg_data& leg)
+
+//get data from leg.endf_tar[i] to leg.joint_data[i].tor_tar
+    void Delta::Statics(struct leg_data& leg)
