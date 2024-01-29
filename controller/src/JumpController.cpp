@@ -52,50 +52,31 @@ namespace controller
     /* public */
     void Delta::InverseKinematics(struct leg_data& leg)
     {
-        double tempm,tempA,tempB,tempC,tempD;
+        double tempm,tempA,tempB,tempC,tempD,tempE,tempxy;
         tempm = leg.endp_tar[0] * leg.endp_tar[0]
               + leg.endp_tar[1] * leg.endp_tar[1]
               + leg.endp_tar[2] * leg.endp_tar[2]
               + leg.rdif * leg.rdif
               + leg.uppleglen * leg.uppleglen
               - leg.lowleglen * leg.lowleglen;
-        
-        tempA = (tempm - 2.0 * leg.endp_tar[0] * leg.rdif)
-              / (2.0 * leg.uppleglen)
-              - (leg.rdif - leg.endp_tar[0]);
-        tempB = - 2.0 * leg.endp_tar[2];
-        tempC = (tempm - 2.0 * leg.endp_tar[0] * leg.rdif)
-              / (2.0 * leg.uppleglen)
-              + (leg.rdif - leg.endp_tar[0]);
-        tempD = sqrt(tempB * tempB - 4.0 * tempA * tempC);
-        leg.joint_data[0].pos_tar = 2.0 * atan((- tempB - tempD)/(2.0 * tempA));
 
-        tempA = (tempm + (leg.endp_tar[0] - sqr3 * leg.endp_tar[1]) * leg.rdif)
-              / (leg.uppleglen)
-              - 2.0 * leg.rdif
-              - (leg.endp_tar[0] - sqr3 * leg.endp_tar[1]);
-        tempB = - 4.0 * leg.endp_tar[2];
-        tempC = (tempm + (leg.endp_tar[0] - sqr3 * leg.endp_tar[1]) * leg.rdif)
-              / (leg.uppleglen)
-              + 2.0 * leg.rdif
-              + (leg.endp_tar[0] - sqr3 * leg.endp_tar[1]);
-        tempD = sqrt(tempB * tempB - 4.0 * tempA * tempC);
-        leg.joint_data[1].pos_tar = 2.0 * atan((- tempB - tempD)/(2.0 * tempA));
-
-        tempA = (tempm + (leg.endp_tar[0] + sqr3 * leg.endp_tar[1]) * leg.rdif)
-              / (leg.uppleglen)
-              - 2.0 * leg.rdif
-              - (leg.endp_tar[0] + sqr3 * leg.endp_tar[1]);
-        tempB = - 4.0 * leg.endp_tar[2];
-        tempC = (tempm + (leg.endp_tar[0] + sqr3 * leg.endp_tar[1]) * leg.rdif)
-              / (leg.uppleglen)
-              + 2.0 * leg.rdif
-              + (leg.endp_tar[0] + sqr3 * leg.endp_tar[1]);
-        tempD = sqrt(tempB * tempB - 4.0 * tempA * tempC);
-        leg.joint_data[2].pos_tar = 2.0 * atan((- tempB - tempD)/(2.0 * tempA));
+        for(int i = 0;i < 3;i++)
+        {
+            tempxy = cos(pi2_3 * i) * leg.endp_tar[0] + sin(pi2_3 * i) * leg.endp_tar[1];
+            tempA = (tempm - 2.0 * leg.rdif * tempxy)
+                  / (2.0 * leg.uppleglen)
+                  - leg.rdif + tempxy;
+            tempB = - 2.0 * leg.endp_tar[2];
+            tempC = (tempm - 2.0 * leg.rdif * tempxy)
+                  / (2.0 * leg.uppleglen)
+                  + leg.rdif - tempxy;
+            tempD = sqrt(tempB * tempB - 4.0 * tempA * tempC);
+            tempE = (- tempB - tempD)/(2.0 * tempA);
+            leg.joint_data[i].pos_tar = 2.0 * atan(tempE);
+        }
     }
 
-    void Delta::ForwardKinematics(struct leg_data& leg)
+    void Delta::ForwardKinematicsP(struct leg_data& leg)
     {
         double a,b,c,p,s,lde,ld2f,lfe,lep;
         double d1[3],d2[3],d3[3],f[3],op[3];
@@ -146,12 +127,25 @@ namespace controller
         }
     }
 
-    void Delta::Statics(struct leg_data& leg)
+    void Delta::ForwardKinematicsVF(struct leg_data& leg)
     {
-        double tempm,tempA,tempB,tempC,tempD,tempE;
-        double tempmd[3],tempAd[3],tempBd[3],tempCd[3];
+        for(int i = 0;i < 3;i++)
+        {
+            leg.endv[i] = 0.0;
+            leg.endf[i] = 0.0;
+            for(int j = 0;j < 3;j++)
+            {
+                leg.endv[i]+= leg.Jacob[i][j] * leg.joint_data[j].vel;
+                leg.endf[i]+= leg.reJacob[j][i] * leg.joint_data[j].tor;
+            }
+        }
+    }
+
+    void Delta::CalJacob(struct leg_data& leg)
+    {
+        double tempm,tempA,tempB,tempC,tempD,tempE,tempxy;
+        double tempmd,tempxyd,tempAd,tempBd,tempCd;
         double tempDd,tempEd;
-        double tempJ[3][3];
 
         tempm = leg.endp[0] * leg.endp[0]
               + leg.endp[1] * leg.endp[1]
@@ -159,150 +153,76 @@ namespace controller
               + leg.rdif * leg.rdif
               + leg.uppleglen * leg.uppleglen
               - leg.lowleglen * leg.lowleglen;
-        
-        /*theta1 */
-        tempA = (tempm - 2.0 * leg.endp[0] * leg.rdif)
-              / (2.0 * leg.uppleglen)
-              - (leg.rdif - leg.endp[0]);
-        tempB = - 2.0 * leg.endp[2];
-        tempC = (tempm - 2.0 * leg.endp[0] * leg.rdif)
-              / (2.0 * leg.uppleglen)
-              + (leg.rdif - leg.endp[0]);
-        tempD = sqrt(tempB * tempB - 4.0 * tempA * tempC);
-        tempE = (- tempB - tempD)/(2.0 * tempA);
-        /* theta1_x */
-        tempmd[0] = 2.0 * leg.endp[0];
-        tempAd[0] = (tempmd[0] - 2.0 * leg.rdif) / (2.0 * leg.uppleglen) + 1.0;
-        tempBd[0] = 0.0;
-        tempCd[0] = (tempmd[0] - 2.0 * leg.rdif) / (2.0 * leg.uppleglen) - 1.0;
-        /* theta1_y */
-        tempmd[1] = 2.0 * leg.endp[1];
-        tempAd[1] = tempmd[1] / (2.0 * leg.uppleglen);
-        tempBd[1] = 0.0;
-        tempCd[1] = tempmd[1] / (2.0 * leg.uppleglen);
-        /* theta1_z */
-        tempmd[2] = 2.0 * leg.endp[2];
-        tempAd[2] = tempmd[2] / (2.0 * leg.uppleglen);
-        tempBd[2] = - 2.0;
-        tempCd[2] = tempmd[2] / (2.0 * leg.uppleglen);
-        for(int i = 0;i < 3;i++)
-        {
-            tempDd = (2.0 * tempB * tempBd[i]
-                   - 4.0 * tempA * tempCd[i] - 4.0 * tempAd[i] * tempC)
-                   / tempD;
-            tempEd = ((- tempBd[i] - tempDd) * 2.0 * tempA
-                   - (- tempB - tempD) * 2.0 * tempAd[i])
-                   / (4.0 * tempA * tempA);
-            tempJ[0][i] = 2.0 * tempEd / (tempE * tempE + 1.0);
-        }
-        
-        /* theta2 */
-        tempA = (tempm + (leg.endp[0] - sqr3 * leg.endp[1]) * leg.rdif)
-              / (leg.uppleglen)
-              - 2.0 * leg.rdif
-              - (leg.endp[0] - sqr3 * leg.endp[1]);
-        tempB = - 4.0 * leg.endp[2];
-        tempC = (tempm + (leg.endp[0] - sqr3 * leg.endp[1]) * leg.rdif)
-              / (leg.uppleglen)
-              + 2.0 * leg.rdif
-              + (leg.endp[0] - sqr3 * leg.endp[1]);
-        tempD = sqrt(tempB * tempB - 4.0 * tempA * tempC);
-        tempE = (- tempB - tempD)/(2.0 * tempA);
-        /* theta2_x */
-        tempmd[0] = 2.0 * leg.endp[0];
-        tempAd[0] = (tempmd[0] + leg.rdif) / leg.uppleglen - 1.0;
-        tempBd[0] = 0.0;
-        tempCd[0] = (tempmd[0] + leg.rdif) / leg.uppleglen + 1.0;
-        /* theta2_y */
-        tempmd[1] = 2.0 * leg.endp[1];
-        tempAd[1] = (tempmd[1] - sqr3 * leg.rdif) / leg.uppleglen + sqr3;
-        tempBd[1] = 0.0;
-        tempCd[1] = (tempmd[1] - sqr3 * leg.rdif) / leg.uppleglen - sqr3;
-        /* theta2_z */
-        tempmd[2] = 2.0 * leg.endp[2];
-        tempAd[2] = tempmd[2] / leg.uppleglen;
-        tempBd[2] = - 4.0;
-        tempCd[2] = tempmd[2] / leg.uppleglen;
-        for(int i = 0;i < 3;i++)
-        {
-            tempDd = (2.0 * tempB * tempBd[i]
-                   - 4.0 * tempA * tempCd[i] - 4.0 * tempAd[i] * tempC)
-                   / tempD;
-            tempEd = ((- tempBd[i] - tempDd) * 2.0 * tempA
-                   - (- tempB - tempD) * 2.0 * tempAd[i])
-                   / (4.0 * tempA * tempA);
-            tempJ[1][i] = 2.0 * tempEd / (tempE * tempE + 1.0);
-        }
 
-        /* theta3 */
-        tempA = (tempm + (leg.endp[0] + sqr3 * leg.endp[1]) * leg.rdif)
-              / (leg.uppleglen)
-              - 2.0 * leg.rdif
-              - (leg.endp[0] + sqr3 * leg.endp[1]);
-        tempB = - 4.0 * leg.endp[2];
-        tempC = (tempm + (leg.endp[0] + sqr3 * leg.endp[1]) * leg.rdif)
-              / (leg.uppleglen)
-              + 2.0 * leg.rdif
-              + (leg.endp[0] + sqr3 * leg.endp[1]);
-        tempD = sqrt(tempB * tempB - 4.0 * tempA * tempC);
-        tempE = (- tempB - tempD)/(2.0 * tempA);
-        /* theta3_x */
-        tempmd[0] = 2.0 * leg.endp[0];
-        tempAd[0] = (tempmd[0] + leg.rdif) / leg.uppleglen - 1.0;
-        tempBd[0] = 0.0;
-        tempCd[0] = (tempmd[0] + leg.rdif) / leg.uppleglen + 1.0;
-        /* theta3_y */
-        tempmd[1] = 2.0 * leg.endp[1];
-        tempAd[1] = (tempmd[1] + sqr3 * leg.rdif) / leg.uppleglen - sqr3;
-        tempBd[1] = 0.0;
-        tempCd[1] = (tempmd[1] + sqr3 * leg.rdif) / leg.uppleglen + sqr3;
-        /* theta3_z */
-        tempmd[2] = 2.0 * leg.endp[2];
-        tempAd[2] = tempmd[2] / leg.uppleglen;
-        tempBd[2] = - 4.0;
-        tempCd[2] = tempmd[2] / leg.uppleglen;
         for(int i = 0;i < 3;i++)
         {
-            tempDd = (2.0 * tempB * tempBd[i]
-                   - 4.0 * tempA * tempCd[i] - 4.0 * tempAd[i] * tempC)
-                   / tempD;
-            tempEd = ((- tempBd[i] - tempDd) * 2.0 * tempA
-                   - (- tempB - tempD) * 2.0 * tempAd[i])
-                   / (4.0 * tempA * tempA);
-            tempJ[2][i] = 2.0 * tempEd / (tempE * tempE + 1.0);
-        }
-
-        InverseMatrix33(tempJ,leg.Jacob);
-        for(int i = 0;i < 3;i++)
-        {
+            tempxy = cos(pi2_3 * i) * leg.endp[0] + sin(pi2_3 * i) * leg.endp[1];
+            tempA = (tempm - 2.0 * leg.rdif * tempxy)
+                  / (2.0 * leg.uppleglen)
+                  - leg.rdif + tempxy;
+            tempB = - 2.0 * leg.endp[2];
+            tempC = (tempm - 2.0 * leg.rdif * tempxy)
+                  / (2.0 * leg.uppleglen)
+                  + leg.rdif - tempxy;
+            tempD = sqrt(tempB * tempB - 4.0 * tempA * tempC);
+            tempE = (- tempB - tempD)/(2.0 * tempA);
             for(int j = 0;j < 3;j++)
-                printf("%lf ",tempJ[i][j]);
-            printf("\n");
+            {
+                tempmd = 2.0 * leg.endp[j];
+                if(j < 2)
+                {
+                    tempxyd = cos((M_PI_2 * j) - pi2_3 * i);
+                    tempAd = (tempmd - 2.0 * leg.rdif * tempxyd)
+                           / (2.0 * leg.uppleglen) + tempxyd;
+                    tempBd = 0.0;
+                    tempCd = (tempmd - 2.0 * leg.rdif * tempxyd)
+                           / (2.0 * leg.uppleglen) - tempxyd;
+                }
+                else
+                {
+                    tempAd = tempmd / (2.0 * leg.uppleglen);
+                    tempBd = - 2.0;
+                    tempCd = tempmd / (2.0 * leg.uppleglen);
+                }
+                tempDd = 0.5 / tempD
+                       * (2.0 * tempB * tempBd
+                       - 4.0 * tempA * tempCd - 4.0 * tempAd * tempC);
+                tempEd = 1.0 / (4.0 * tempA * tempA)
+                       * ((- tempBd - tempDd) * 2.0 * tempA
+                       - (- tempB - tempD) * 2.0 * tempAd);
+                leg.reJacob[i][j] = 2.0 * tempEd / (tempE * tempE + 1.0);
+            }
         }
+        InverseMatrix33(leg.reJacob,leg.Jacob);
+    }
+
+    void Delta::Statics(struct leg_data& leg)
+    {
         for(int i = 0;i < 3;i++)
         {
             leg.joint_data[i].tor_tar = 0.0;
             for(int j = 0;j < 3;j++)
             {
-                printf("%lf ",leg.Jacob[i][j]);
                 leg.joint_data[i].tor_tar+= leg.Jacob[j][i] * leg.endf_tar[j] / 1000.0;
             }
-            printf("\n");
         }
     }
 
     void JumpController::Get()
     {
-        delta.ForwardKinematics(body.leg);
+        delta.ForwardKinematicsP(body.leg);
         for(int i = 0;i < joint_num;i++)
         {
             std::cout<<body.leg.endp[i]<<std::endl;
             body.leg.endp_tar[i] = body.leg.endp[i];
         }
-        body.leg.endf_tar[0] = 0.0;
-        body.leg.endf_tar[1] = 0.0;
-        body.leg.endf_tar[2] = 13.0;
+
+        body.leg.endf_tar[0] = - 0.05 * (body.leg.endp[0] - 0.0);
+        body.leg.endf_tar[1] = - 0.05 * (body.leg.endp[1] - 0.0);
+        body.leg.endf_tar[2] = - 0.5 * (body.leg.endp[2] - 212.0) + 1.60;
+        printf("%lf %lf %lf\n",body.leg.endf_tar[0],body.leg.endf_tar[1],body.leg.endf_tar[2]);
         delta.Statics(body.leg);
+
         delta.InverseKinematics(body.leg);
 
         for(int i = 0;i < joint_num;i++)
@@ -310,6 +230,79 @@ namespace controller
             std::cout<<body.leg.joint_data[i].pos_tar<<
             " "<<body.leg.joint_data[i].tor_tar<<std::endl;
         }
+    }
+
+    void JumpController::UpdateParam()
+    {
+        delta.ForwardKinematicsP(body.leg);
+        delta.CalJacob(body.leg);
+        delta.ForwardKinematicsVF(body.leg);
+
+        for(int i = 0;i < 3;i++)
+        {
+            printf("%lf ",body.leg.endp[i]);
+        }
+        printf("\n");
+        /* IMU for Body */
+    }
+
+    void JumpController::JudgeState()
+    {
+        if(first_minimum)
+        {
+            if(body.pos[2] - body.leg.endp[2] > margin)
+                body.state = stateFlying;
+            else
+                body.state = stateLanding;
+        }
+        else
+        {
+            body.state = stateLanding;
+            if(body.vel[2] > 0)
+            {
+                first_minimum = 1;
+                body.pos[2] = body.leg.endp[2];
+            }
+        }
+    }
+
+    void JumpController::SetFlyingAngle()
+    {
+
+    }
+
+    void JumpController::SetLandingForce()
+    {
+        body.leg.endf_tar[0] = 1.0;
+        body.leg.endf_tar[1] = 0.0;
+        body.leg.endf_tar[2] = 0.0;
+        delta.Statics(body.leg);
+        for(int i = 0;i < joint_num;i++)
+        {
+            body.leg.joint_data[i].kp = 0.0;
+        }
+    }
+    
+    void JumpController::Init(double margin_)
+    {
+        margin = margin_;
+    }
+
+    void JumpController::Controller()
+    {
+        UpdateParam();
+        // JudgeState();
+        // if(body.state == stateFlying)
+        // {
+        //     SetFlyingAngle();
+        //     SetLandingForce();
+        // }
+        // else
+        // {
+        //     SetLandingForce();
+        // }
+
+        SetLandingForce();
     }
 }
 
@@ -338,7 +331,7 @@ void motorCallback(const can::motor_data::ConstPtr& motor_msg,controller::motor_
 int main(int argc, char **argv)
 {
     /* variables */
-    int countl = 0, loop_hz = 1;
+    int countl = 0, loop_hz = 100;
     const uint16_t jointnum = 3;
     controller::motor_data joint[jointnum];
 
@@ -351,35 +344,32 @@ int main(int argc, char **argv)
     nh.advertise<can::motor_data>("cybergear_cmds", jointnum);
 
     ros::Subscriber motor_sub = 
-    nh.subscribe<can::motor_data>("cybergear_msgs", 1000, boost::bind(&motorCallback,_1,joint));
+    nh.subscribe<can::motor_data>("cybergear_msgs", jointnum, boost::bind(&motorCallback,_1,joint));
 
     ros::Rate loop_rate(loop_hz);
 
     /* Initial */
     InitJoint(joint,jointnum);
-    controller::JumpController jc(62.5,40.0,110.0,250.0,joint,jointnum);
+    controller::JumpController jc(62.5,40.0,110.0,250.0,joint,jointnum,2.5,0.1);
+    jc.Init(10);
     can::motor_data motor_cmd;
+    
 
     /* loop */
     while (ros::ok())
     {
         ros::spinOnce();
 
-        for(int i = 0;i < 3;i++)
-        {
-            joint[i].pos = 0.1 * (double)i;
-        }
-
-        jc.Get();
+        jc.Controller();
 
         for(int i = 0;i < 3;i++)
         {
             motor_cmd.id = i + 1;
-            motor_cmd.pos_tar = 0.0;
-            motor_cmd.vel_tar = 0.0;
-            motor_cmd.tor_tar = 0.0;
-            motor_cmd.kp = 2.5;
-            motor_cmd.kd = 0.0;
+            motor_cmd.pos_tar = joint[i].pos_tar;
+            motor_cmd.vel_tar = joint[i].vel_tar;
+            motor_cmd.tor_tar = joint[i].tor_tar;
+            motor_cmd.kp = joint[i].kp;
+            motor_cmd.kd = joint[i].kd;
             motor_pub.publish(motor_cmd);
         }
 
