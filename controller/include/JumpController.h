@@ -18,6 +18,7 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "std_msgs/Float32MultiArray.h"
+
 #include <unistd.h>
 
 #include "can/motor_data.h"
@@ -32,6 +33,7 @@ namespace controller{
     struct leg_data{
         motor_data* joint_data;
         
+        double len;
         double endp[3],endv[3],endf[3];
         double endp_tar[3],endv_tar[3],endf_tar[3];
         double biospos[3];
@@ -95,15 +97,16 @@ namespace controller{
                 }
             }
             void Get();
-            void Init(double margin_);
+            void Init(double l_0_,double k_spring_,double margin_);
             void Controller();
         private:
             void UpdateParam();
             void JudgeState();
             void SetFlyingAngle();
             void SetLandingForce();
-            double margin;
-            uint16_t joint_num,first_minimum = 0;
+            double l_0,k_spring,margin;
+            uint16_t leg_num,joint_num;
+            int first_minimum;
             controller::body_data body;
             controller::Delta delta;
     };

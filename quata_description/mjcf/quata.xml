@@ -48,11 +48,11 @@
       <freejoint/>
     </body> -->
     
-    <body name="base" pos = "0 0 0.205">
+    <body name="base" pos = "0 0 0.50">
       <!--freejoint用来控制baselink是不是浮动的-->
       <!-- <freejoint /> -->
       <site name="Imu" size=".01" pos="0 0 0"/>
-      <!-- <joint name="baseslidez" pos="0 0 0" axis="0 0 1" type="slide"/> -->
+      <joint name="baseslidez" pos="0 0 0" axis="0 0 1" type="slide"/>
       <!-- <joint name="baseslidex" pos="0 0 0" axis="1 0 0" type="slide"/> -->
       <!-- <joint name="basehingey" pos="0 0 0" axis="0 1 0" type="hinge"/> -->
       <!-- <joint name="baseslidey" pos="0 0 0" axis="0 1 0" type="slide"/> -->
@@ -79,7 +79,7 @@
               <body name="End" pos="0 -0.0035 -0.006" quat="0.757461 0.242385 -0.437322 0.419823">
                 <inertial pos="0.0113397 -0.0055 -0.039641" quat="0 0 0 1" mass="0.043" diaginertia="1.5809e-05 2.1146e-05 1.5809e-05"/>
                 <joint name="End" pos="0 0 0" axis="0.866027 0 0.499998"/>
-                <geom type="mesh" contype="1" conaffinity="0" rgba="1 0.3882 0.2784 1" mesh="End" solref="-8000 0"/>
+                <geom type="mesh" contype="1" conaffinity="0" condim="6" friction="1 0.005 0.0001" rgba="1 0.3882 0.2784 1" mesh="End" solref="-8000 -1"/>
                 <site name="EndSite" size=".03" pos="0.0113397 -0.0055 -0.039641"/>
               </body>
             </body>
