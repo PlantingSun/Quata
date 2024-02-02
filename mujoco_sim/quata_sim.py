@@ -24,7 +24,7 @@ class QuataSim(MuJoCoBase):
 		print('Total mass: ', totalMass)
 
 		# * Set subscriber and publisher
-		self.pubImu = rospy.Publisher('/bodyImu', Imu, queue_size=1)
+		self.pubImu = rospy.Publisher('/imu/data', Imu, queue_size=1)
 		self.pubMotor = rospy.Publisher('/cybergear_msgs', motor_data, queue_size=6)
 		rospy.Subscriber("/cybergear_cmds", motor_data, self.run_motor_callback, queue_size=10)
 		# * show the model
@@ -117,7 +117,7 @@ class QuataSim(MuJoCoBase):
 		self.cam.lookat = np.array([0.0, 0.0, 0.5])
 		#init motor_cmd 
 		for i in range(1,4):
-			self.motor_cmd[i].pos_tar = 0
+			self.motor_cmd[i].pos_tar = 0.0
 			self.motor_cmd[i].vel_tar = 0.0
 			self.motor_cmd[i].tor_tar = 0.0
 			self.motor_cmd[i].kp = 5

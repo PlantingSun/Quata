@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  sensor_msgs
   can
 )
 
@@ -113,6 +114,7 @@ catkin_package(
         roscpp
         rospy
         std_msgs
+        sensor_msgs
 )
 
 ###########

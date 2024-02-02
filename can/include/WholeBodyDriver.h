@@ -76,10 +76,12 @@ private:
 /* CAN Driver for Whole Body */
 class WholeBodyDriver{
 public:
-    WholeBodyDriver(wholebodydriver::motor_data* joint_data_,uint16_t joint_num_)
+    WholeBodyDriver(wholebodydriver::motor_data* joint_data_,uint16_t joint_num_,
+                    int* com_success_)
     {
         joint_data = joint_data_;
         joint_num = joint_num_;
+        com_success = com_success_;
     }
     void Init();
     void SendReadOnce();
@@ -94,6 +96,7 @@ private:
     void CleanUp();
 
     uint16_t joint_num;
+    int* com_success;
     wholebodydriver::motor_data* joint_data;
     wholebodydriver::motor_data rx_data,temp_cmd;
     wholebodydriver::CyberGearDriver cybergear;

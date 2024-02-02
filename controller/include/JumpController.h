@@ -18,6 +18,7 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "std_msgs/Float32MultiArray.h"
+#include "sensor_msgs/Imu.h"
 
 #include <unistd.h>
 
@@ -52,6 +53,8 @@ namespace controller{
         leg_data leg;
 
         body_state state;
+        double* orient;
+        double* acc;
         double pitch,roll,yaw;
         double pos[3],vel[3];
     };
@@ -63,29 +66,35 @@ namespace controller{
             void ForwardKinematicsP(struct leg_data& leg);
             void ForwardKinematicsVF(struct leg_data& leg);
             void CalJacob(struct leg_data& leg);
+            void CalreJacob(struct leg_data& leg);
             void Statics(struct leg_data& leg);
         private:
             void VectorSub3(double* arr_front,double* arr_back,double* arr_out);
+            void MatrixSub33(double (*mat_front)[3],double (*mat_back)[3],double (*mat_out)[3]);
             void CrossProduct3(double* arr_front,double* arr_back,double* arr_out);
             void InverseMatrix33(double (*mat_in)[3],double (*mat_out)[3]);
             double Norm3(double* arr);
+            void Norm3d(double* arr,double (*arr_d)[3],double len,double* len_d);
             const double sqr3 = 1.73205081;
             const double pi2_3 = M_PI * 2.0 / 3.0;
     };
 
     class JumpController{
         public:
-            JumpController(double rbody_,double rfoot_,double uppleglen_,double lowleglen_,
+            JumpController(double* orient_,double* acc_,
+                           double rbody_,double rfoot_,double uppleglen_,double lowleglen_,
                            controller::motor_data* joint_data_,uint16_t joint_num_,
                            double joint_kp_,double joint_kd_)
             {
-                joint_num = joint_num_;
-                body.leg.joint_data = joint_data_;
+                body.orient = orient_;
+                body.acc = acc_;
                 body.leg.rbody = rbody_;
                 body.leg.rfoot = rfoot_;
                 body.leg.rdif = rbody_ - rfoot_;
                 body.leg.uppleglen = uppleglen_;
                 body.leg.lowleglen = lowleglen_;
+                body.leg.joint_data = joint_data_;
+                joint_num = joint_num_;
                 
                 for(int i = 0;i < joint_num;i++)
                 {

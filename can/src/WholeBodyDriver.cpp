@@ -197,14 +197,6 @@ namespace wholebodydriver
         for(int i = 0;i < joint_num;i++)
         {
             cybergear.Enable(frame0_s,joint_data[i].ID);
-
-            // printf("id:%08x\n",frame0_s.can_id);
-            // printf("dlc:%u\n",frame0_s.can_dlc);
-            // for(int j = 0;j < 8;j++)
-            // {
-            //     printf("data%d:%02x\n",j,frame0_s.data[j]);
-            // }
-
             SendCan(s0);
             usleep(2000);
             while(1)
@@ -217,56 +209,45 @@ namespace wholebodydriver
                 printf("Enable motor%u success\n",joint_data[i].ID);
                 memcpy(&frame0_r, &frame0_buf, sizeof(frame0_buf));
             }
-
             cybergear.GetFeedback(frame0_r,rx_data);
+            for(int j = 0;j < joint_num;j++)
+                if(joint_data[j].ID == rx_data.ID)
+                {
+                    joint_data[j].pos = rx_data.pos;
+                    joint_data[j].vel = rx_data.vel;
+                    joint_data[j].tor = rx_data.tor;
+                    joint_data[j].tem = rx_data.tem;
+                    printf("ID:%d\n",joint_data[j].ID);
+                    printf("pos:%lf  vel:%lf\n",joint_data[j].pos,joint_data[j].vel);
+                    printf("tor:%lf  tem:%lf\n",joint_data[j].tor,joint_data[j].tem);
+                }
 
-            // printf("id:%08x\n",frame0_buf.can_id);
-            // printf("dlc:%u\n",frame0_buf.can_dlc);
-            // for(int j = 0;j < 8;j++)
+            // usleep(2000);
+            // cybergear.SetZero(frame0_s,joint_data[i].ID);
+            // SendCan(s0);
+            // usleep(2000);
+            // while(1)
             // {
-            //     printf("data%d:%02x\n",i,frame0_buf.data[j]);
+            //     if(ReadCan(s0) == -1)
+            //     {
+            //         printf("Setzero motor%u end\n",joint_data[i].ID);
+            //         break;
+            //     }
+            //     printf("Setzero motor%u success\n",joint_data[i].ID);
+            //     memcpy(&frame0_r, &frame0_buf, sizeof(frame0_buf));
             // }
-
-            for(int j = 0;j < joint_num;j++)
-                if(joint_data[j].ID == rx_data.ID)
-                {
-                    joint_data[j].pos = rx_data.pos;
-                    joint_data[j].vel = rx_data.vel;
-                    joint_data[j].tor = rx_data.tor;
-                    joint_data[j].tem = rx_data.tem;
-                    printf("ID:%d\n",joint_data[j].ID);
-                    printf("pos:%lf  vel:%lf\n",joint_data[j].pos,joint_data[j].vel);
-                    printf("tor:%lf  tem:%lf\n",joint_data[j].tor,joint_data[j].tem);
-                }
-
-            usleep(2000);
-
-            cybergear.SetZero(frame0_s,joint_data[i].ID);
-            SendCan(s0);
-            usleep(2000);
-            while(1)
-            {
-                if(ReadCan(s0) == -1)
-                {
-                    printf("Setzero motor%u end\n",joint_data[i].ID);
-                    break;
-                }
-                printf("Setzero motor%u success\n",joint_data[i].ID);
-                memcpy(&frame0_r, &frame0_buf, sizeof(frame0_buf));
-            }
-
-            cybergear.GetFeedback(frame0_r,rx_data);
-            for(int j = 0;j < joint_num;j++)
-                if(joint_data[j].ID == rx_data.ID)
-                {
-                    joint_data[j].pos = rx_data.pos;
-                    joint_data[j].vel = rx_data.vel;
-                    joint_data[j].tor = rx_data.tor;
-                    joint_data[j].tem = rx_data.tem;
-                    printf("ID:%d\n",joint_data[j].ID);
-                    printf("pos:%lf  vel:%lf\n",joint_data[j].pos,joint_data[j].vel);
-                    printf("tor:%lf  tem:%lf\n",joint_data[j].tor,joint_data[j].tem);
-                }
+            // cybergear.GetFeedback(frame0_r,rx_data);
+            // for(int j = 0;j < joint_num;j++)
+            //     if(joint_data[j].ID == rx_data.ID)
+            //     {
+            //         joint_data[j].pos = rx_data.pos;
+            //         joint_data[j].vel = rx_data.vel;
+            //         joint_data[j].tor = rx_data.tor;
+            //         joint_data[j].tem = rx_data.tem;
+            //         printf("ID:%d\n",joint_data[j].ID);
+            //         printf("pos:%lf  vel:%lf\n",joint_data[j].pos,joint_data[j].vel);
+            //         printf("tor:%lf  tem:%lf\n",joint_data[j].tor,joint_data[j].tem);
+            //     }
         }
     }
 
@@ -276,8 +257,6 @@ namespace wholebodydriver
         {
             cybergear.MixControl(frame0_s,joint_data[i]);
             SendCan(s0);
-
-            usleep(2000);
 
             ReadCan(s0);
             cybergear.GetFeedback(frame0_buf,rx_data);
@@ -289,9 +268,10 @@ namespace wholebodydriver
                     joint_data[j].vel = rx_data.vel;
                     joint_data[j].tor = rx_data.tor;
                     joint_data[j].tem = rx_data.tem;
-                    // printf("ID:%d\n",joint_data[j].ID);
-                    // printf("pos:%lf  vel:%lf\n",joint_data[j].pos,joint_data[j].vel);
-                    // printf("tor:%lf  tem:%lf\n",joint_data[j].tor,joint_data[j].tem);
+                    printf("ID:%d\n",joint_data[j].ID);
+                    printf("pos:%lf  vel:%lf\n",joint_data[j].pos,joint_data[j].vel);
+                    printf("tor:%lf  tem:%lf\n",joint_data[j].tor,joint_data[j].tem);
+                    com_success[j]++;
                 }
         }
     }
@@ -320,8 +300,10 @@ int main(int argc, char **argv)
 {
     /* variables */
     //int counth[3] = {0};
-    int countl = 0,loop_hz = 100;
+    int countl = 0,loop_hz = 500;
+    double com_rate;
     const uint16_t jointnum = 3;
+    int communication_success[jointnum];
     wholebodydriver::motor_data joint[jointnum];
     
     /* ros */
@@ -339,7 +321,7 @@ int main(int argc, char **argv)
 
     /* Initial */
     InitJoint(joint,jointnum);
-    wholebodydriver::WholeBodyDriver quata(joint,jointnum);
+    wholebodydriver::WholeBodyDriver quata(joint,jointnum,communication_success);
     quata.Init();
 
     can::motor_data motor_msg;
@@ -364,6 +346,12 @@ int main(int argc, char **argv)
         if(countl == loop_hz)
         {
             countl = 0;
+            for(int i = 0;i < jointnum;i++)
+            {
+                com_rate = (double)communication_success[i] * 100.0 / loop_hz;
+                communication_success[i] = 0;
+                printf("motor%d:%lf%%\n",i + 1,com_rate);
+            }
             ROS_INFO("One Loop");
         }
 
