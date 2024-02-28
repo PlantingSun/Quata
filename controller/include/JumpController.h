@@ -25,6 +25,7 @@
 #include "can/motor_data.h"
 
 namespace controller{
+
     struct motor_data{
         uint16_t ID;
         double pos,vel,tor,tem;
@@ -32,6 +33,7 @@ namespace controller{
     };
 
     struct leg_data{
+        int joint_num;
         motor_data* joint_data;
         
         double len;
@@ -50,13 +52,12 @@ namespace controller{
             };
 
     struct body_data{
-        leg_data leg;
+        int leg_num;
+        leg_data* leg;
 
         body_state state;
-        double* orient;
-        double* acc;
-        double pitch,roll,yaw;
-        double pos[3],vel[3];
+        double orient[4],rot_mat[3][3],pitch,roll,yaw;
+        double pos[3],vel[3],acc[3],raw_acc[3];
     };
 
     /* Delta mechanism */
@@ -79,44 +80,32 @@ namespace controller{
             const double pi2_3 = M_PI * 2.0 / 3.0;
     };
 
+    /* controller */
     class JumpController{
         public:
-            JumpController(double* orient_,double* acc_,
-                           double rbody_,double rfoot_,double uppleglen_,double lowleglen_,
-                           controller::motor_data* joint_data_,uint16_t joint_num_,
-                           double joint_kp_,double joint_kd_)
+            JumpController(double l_0_,double k_spring_,double margin_,
+                           double joint_kp_,double joint_kd_,double ctrl_rate_)
             {
-                body.orient = orient_;
-                body.acc = acc_;
-                body.leg.rbody = rbody_;
-                body.leg.rfoot = rfoot_;
-                body.leg.rdif = rbody_ - rfoot_;
-                body.leg.uppleglen = uppleglen_;
-                body.leg.lowleglen = lowleglen_;
-                body.leg.joint_data = joint_data_;
-                joint_num = joint_num_;
-                
-                for(int i = 0;i < joint_num;i++)
-                {
-                    body.leg.joint_data[i].pos_tar = 0.0;
-                    body.leg.joint_data[i].vel_tar = 0.0;
-                    body.leg.joint_data[i].tor_tar = 0.0;
-                    body.leg.joint_data[i].kp = joint_kp_;
-                    body.leg.joint_data[i].kd = joint_kd_;
-                }
+                l_0 = l_0_;
+                k_spring = k_spring_;
+                margin = margin_;
+                joint_kp = joint_kp_;
+                joint_kd = joint_kd_;
+                ctrl_rate = ctrl_rate_;
+                first_minimum = 0;
             }
-            void Get();
-            void Init(double l_0_,double k_spring_,double margin_);
-            void Controller();
+            void Controller(controller::body_data& body);
         private:
-            void UpdateParam();
-            void JudgeState();
-            void SetFlyingAngle();
-            void SetLandingForce();
+            void QuattoRotMat(controller::body_data& body);
+            void QuattoEuler(controller::body_data& body);
+            void UpdateParam(controller::body_data& body);
+            void JudgeState(controller::body_data& body);
+            void SetFlyingAngle(controller::body_data& body);
+            void SetLandingForce(controller::body_data& body);
             double l_0,k_spring,margin;
-            uint16_t leg_num,joint_num;
+            double joint_kp,joint_kd,ctrl_rate;
             int first_minimum;
-            controller::body_data body;
+
             controller::Delta delta;
     };
 }

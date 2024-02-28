@@ -65,6 +65,7 @@ namespace controller
             len_d[i]/= len;
         }
     }
+
     /* public */
     void Delta::InverseKinematics(struct leg_data& leg)
     {
@@ -276,7 +277,6 @@ namespace controller
                 fed[i][j] = ((fe0d[i][j] * lfe + fe0[i] * lfed[j]) * lfe0
                           - fe0[i] * lfe * lfe0d[j]) / lfe0 / lfe0;
             }
-
         
         lep0 = Norm3(ep0);
         for(int i = 0;i < 3;i++)
@@ -388,47 +388,80 @@ namespace controller
             }
         }
     }
-
-    void JumpController::Get()
+    
+    void JumpController::QuattoRotMat(controller::body_data& body)
     {
-        delta.ForwardKinematicsP(body.leg);
-        for(int i = 0;i < joint_num;i++)
-        {
-            std::cout<<body.leg.endp[i]<<std::endl;
-            body.leg.endp_tar[i] = body.leg.endp[i];
-        }
+        double xsq = body.orient[1] * body.orient[1];
+        double ysq = body.orient[2] * body.orient[2];
+        double zsq = body.orient[3] * body.orient[3];
+        double xyt = body.orient[1] * body.orient[2];
+        double xzt = body.orient[1] * body.orient[3];
+        double xwt = body.orient[1] * body.orient[0];
+        double yzt = body.orient[2] * body.orient[3];
+        double ywt = body.orient[2] * body.orient[0];
+        double zwt = body.orient[3] * body.orient[0];
 
-        body.leg.endf_tar[0] = - 0.05 * (body.leg.endp[0] - 0.0);
-        body.leg.endf_tar[1] = - 0.05 * (body.leg.endp[1] - 0.0);
-        body.leg.endf_tar[2] = - 0.5 * (body.leg.endp[2] - 212.0) + 1.60;
-        printf("%lf %lf %lf\n",body.leg.endf_tar[0],body.leg.endf_tar[1],body.leg.endf_tar[2]);
-        delta.Statics(body.leg);
-
-        delta.InverseKinematics(body.leg);
-
-        for(int i = 0;i < joint_num;i++)
-        {
-            std::cout<<body.leg.joint_data[i].pos_tar<<
-            " "<<body.leg.joint_data[i].tor_tar<<std::endl;
-        }
+        body.rot_mat[0][0] = 1.0 - 2.0 * ysq - 2.0 * zsq;
+        body.rot_mat[0][1] = 2.0 * xyt - 2.0 * zwt;
+        body.rot_mat[0][2] = 2.0 * xzt + 2.0 * ywt;
+        body.rot_mat[1][0] = 2.0 * xyt + 2.0 * zwt;
+        body.rot_mat[1][1] = 1.0 - 2.0 * xsq - 2.0 * zsq;
+        body.rot_mat[1][2] = 2.0 * yzt - 2.0 * xwt;
+        body.rot_mat[2][0] = 2.0 * xzt - 2.0 * ywt;
+        body.rot_mat[2][1] = 2.0 * yzt + 2.0 * xwt;
+        body.rot_mat[2][2] = 1.0 - 2.0 * xsq - 2.0 * ysq;
     }
 
-    void JumpController::UpdateParam()
+    void JumpController::QuattoEuler(controller::body_data& body)
     {
-        // delta.ForwardKinematicsP(body.leg);
-        delta.CalJacob(body.leg);
-        // delta.CalreJacob(body.leg);
-        delta.ForwardKinematicsVF(body.leg);
+        // roll (x-axis rotation)
+        double sinr_cosp = 2.0 * (body.orient[0] * body.orient[1] + body.orient[2] * body.orient[3]);
+        double cosr_cosp = 1.0 - 2.0 * (body.orient[1] * body.orient[1] + body.orient[2] * body.orient[2]);
+        body.roll = std::atan2(sinr_cosp, cosr_cosp);
+    
+        // pitch (y-axis rotation)
+        double sinp = 2.0 * (body.orient[0] * body.orient[2] - body.orient[3] * body.orient[1]);
+        body.pitch = std::asin(sinp);
+    
+        // yaw (z-axis rotation)
+        double siny_cosp = 2.0 * (body.orient[0] * body.orient[3] + body.orient[1] * body.orient[2]);
+        double cosy_cosp = 1.0 - 2.0 * (body.orient[2] * body.orient[2] + body.orient[3] * body.orient[3]);
+        body.yaw = std::atan2(siny_cosp, cosy_cosp);
+    }
+
+    void JumpController::UpdateParam(controller::body_data& body)
+    {
+        delta.CalJacob(body.leg[0]);
+        delta.ForwardKinematicsVF(body.leg[0]);
 
         /* IMU for Body */
+        QuattoRotMat(body);
+        QuattoEuler(body);
 
+        // printf("yaw:%lf pitch:%lf roll:%lf\n",body.yaw,body.pitch,body.roll);
+
+        for(int i = 0;i < 3;i++)
+        {
+            body.acc[i] = 0.0;
+            for(int j = 0;j < 3;j++)
+                body.acc[i]+= body.rot_mat[i][j] * body.raw_acc[j];
+            // printf("%lf\n",body.acc[i]);
+        }
+        // if(body.raw_acc[2] != 0.0)
+        //     body.acc[2]-= 9.92;
+        // for(int i = 0;i < 3;i++)
+        // {
+        //     body.vel[i]+= body.acc[i] / ctrl_rate;
+        //     body.pos[i]+= body.vel[i] / ctrl_rate;
+        //     printf("%lf %lf\n",body.vel[i],body.pos[i]);
+        // }
     }
 
-    void JumpController::JudgeState()
+    void JumpController::JudgeState(controller::body_data& body)
     {
         if(first_minimum)
         {
-            if(body.pos[2] - body.leg.endp[2] > margin)
+            if(body.pos[2] - body.leg[0].endp[2] > margin)
                 body.state = stateFlying;
             else
                 body.state = stateLanding;
@@ -437,35 +470,32 @@ namespace controller
         {
             body.state = stateLanding;
             // if(body.vel[2] > 0)
-            if(body.leg.endv[2] > 0)
+            if(body.leg[0].endv[2] > 0)
             {
                 first_minimum = 1;
-                body.pos[2] = body.leg.endp[2];
+                body.pos[2] = body.leg[0].endp[2];
             }
         }
     }
 
-    void JumpController::SetFlyingAngle()
+    void JumpController::SetFlyingAngle(controller::body_data& body)
     {
 
     }
 
-    void JumpController::SetLandingForce()
+    void JumpController::SetLandingForce(controller::body_data& body)
     {
-        // for(int i = 0;i < joint_num;i++)
-        // {
-        //     body.leg.endf_tar[i] = - k_spring * (1 - l_0/body.leg.len) * body.leg.endp[i];
-        //     if(body.leg.endv[2] > 0)
-        //         body.leg.endf_tar[i]*= 5.0;
-        // }
-        body.leg.endf_tar[0] = 0.0;
-        body.leg.endf_tar[1] = 0.0;
-        body.leg.endf_tar[2] = 3.0;
-        delta.Statics(body.leg);
-        for(int i = 0;i < joint_num;i++)
+        for(int i = 0;i < body.leg[0].joint_num;i++)
         {
-            body.leg.joint_data[i].kp = 0.0;
-            body.leg.joint_data[i].kd = 0.0;
+            body.leg[0].endf_tar[i] = - k_spring * (1 - l_0/body.leg[0].len) * body.leg[0].endp[i];
+        }
+
+        delta.Statics(body.leg[0]);
+
+        for(int i = 0;i < body.leg[0].joint_num;i++)
+        {
+            body.leg[0].joint_data[i].kp = 0.0;
+            body.leg[0].joint_data[i].kd = 0.02;
         }
 
         // for(int i = 0;i < joint_num;i++)
@@ -483,18 +513,10 @@ namespace controller
         //     body.leg.joint_data[i].kd = 0.1;
         // }
     }
-    
-    void JumpController::Init(double l_0_,double k_spring_,double margin_)
-    {
-        l_0 = l_0_;
-        k_spring = k_spring_;
-        margin = margin_;
-        first_minimum = 0;
-    }
 
-    void JumpController::Controller()
+    void JumpController::Controller(controller::body_data& body)
     {
-        UpdateParam();
+        UpdateParam(body);
         // JudgeState();
         // if(body.state == stateFlying)
         // {
@@ -506,17 +528,44 @@ namespace controller
         //     SetLandingForce();
         // }
 
-        SetLandingForce();
+        SetLandingForce(body);
     }
 }
 
 
 /* for node */
-void InitJoint(controller::motor_data* joint_data,uint16_t joint_num)
+void InitBody(controller::motor_data* joint_data,int joint_num,
+              controller::leg_data* leg,int leg_num,
+              controller::body_data& body_data,
+              double rbody_,double rfoot_,double uppleglen_,double lowleglen_)
 {
     for(int i = 1;i <= joint_num;i++)
     {
         joint_data[i - 1].ID = i;
+        joint_data[i - 1].pos_tar = 0.0;
+        joint_data[i - 1].vel_tar = 0.0;
+        joint_data[i - 1].tor_tar = 0.0;
+    }
+
+    for(int i = 1;i <= leg_num;i++)
+    {
+        leg[i - 1].joint_data = joint_data;
+        leg[i - 1].joint_num = joint_num;
+        leg[i - 1].rbody = rbody_;
+        leg[i - 1].rfoot = rfoot_;
+        leg[i - 1].rdif = rbody_ - rfoot_;
+        leg[i - 1].uppleglen = uppleglen_;
+        leg[i - 1].lowleglen = lowleglen_;
+    }
+
+    body_data.leg = leg;
+    body_data.leg_num = leg_num;
+    for(int i = 0;i < 3;i++)
+    {
+        body_data.raw_acc[i] = 0.0;
+        body_data.acc[i] = 0.0;
+        body_data.vel[i] = 0.0;
+        body_data.pos[i] = 0.0;
     }
 }
 
@@ -528,24 +577,26 @@ void motorCallback(const can::motor_data::ConstPtr& motor_msg,controller::motor_
     joint_data[(*motor_msg).id - 1].tem = (*motor_msg).tem;
 }
 
-void imuCallback(const sensor_msgs::Imu::ConstPtr& imu_msg,double* orient,double* acc)
+void imuCallback(const sensor_msgs::Imu::ConstPtr& imu_msg,controller::body_data* body_data)
 {
-    orient[0] = (*imu_msg).orientation.x;
-    orient[1] = (*imu_msg).orientation.y;
-    orient[2] = (*imu_msg).orientation.z;
-    orient[3] = (*imu_msg).orientation.w;
-    acc[0] = (*imu_msg).linear_acceleration.x;
-    acc[1] = (*imu_msg).linear_acceleration.y;
-    acc[2] = (*imu_msg).linear_acceleration.z;
+    (*body_data).orient[0] = (*imu_msg).orientation.w;
+    (*body_data).orient[1] = (*imu_msg).orientation.x;
+    (*body_data).orient[2] = (*imu_msg).orientation.y;
+    (*body_data).orient[3] = (*imu_msg).orientation.z;
+    (*body_data).raw_acc[0] = (*imu_msg).linear_acceleration.x;
+    (*body_data).raw_acc[1] = (*imu_msg).linear_acceleration.y;
+    (*body_data).raw_acc[2] = (*imu_msg).linear_acceleration.z;
 }
 
 int main(int argc, char **argv)
 {
     /* variables */
     int countl = 0, loop_hz = 500;
-    const uint16_t jointnum = 3;
+    const int legnum = 1;
+    const int jointnum = 3;
+    controller::body_data body;
+    controller::leg_data leg[legnum];
     controller::motor_data joint[jointnum];
-    double orientation[4],acceleration[3];
 
     /* ros */
     ros::init(argc, argv, "JumpController");
@@ -559,14 +610,13 @@ int main(int argc, char **argv)
     nh.subscribe<can::motor_data>("cybergear_msgs", jointnum, boost::bind(&motorCallback,_1,joint));
 
     ros::Subscriber body_imu = 
-    nh.subscribe<sensor_msgs::Imu>("imu/data", 1, boost::bind(&imuCallback,_1,orientation,acceleration));
+    nh.subscribe<sensor_msgs::Imu>("imu/data", 1, boost::bind(&imuCallback,_1,&body));
 
     ros::Rate loop_rate(loop_hz);
 
     /* Initial */
-    InitJoint(joint,jointnum);
-    controller::JumpController jc(orientation,acceleration,62.5,40.0,110.0,250.0,joint,jointnum,2.5,0.1);
-    jc.Init(200,0.1,10);
+    InitBody(joint, jointnum, leg, legnum, body, 62.5, 40.0, 110.0, 250.0);
+    controller::JumpController jc(212.0, 0.10, 10.0, 1.0, 0.012, loop_hz);
     can::motor_data motor_cmd;
     
 
@@ -575,9 +625,9 @@ int main(int argc, char **argv)
     {
         ros::spinOnce();
 
-        jc.Controller();
+        jc.Controller(body);
 
-        for(int i = 0;i < 3;i++)
+        for(int i = 0;i < jointnum;i++)
         {
             motor_cmd.id = i + 1;
             motor_cmd.pos_tar = joint[i].pos_tar;

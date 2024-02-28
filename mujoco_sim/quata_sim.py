@@ -41,13 +41,15 @@ class QuataSim(MuJoCoBase):
 							mj.mjtCatBit.mjCAT_ALL.value, self.scene)
 		mj.mjr_render(viewport, self.scene, self.context)
 
-		#init motor_cmd 
+		#init
+		self.bodyIMU = Imu()
+		self.bodyMotor = [motor_data(), motor_data(), motor_data()]
 		for i in range(1,4):
 			self.motor_cmd[i].pos_tar = 0.0
 			self.motor_cmd[i].vel_tar = 0.0
 			self.motor_cmd[i].tor_tar = 0.0
-			self.motor_cmd[i].kp = 5
-			self.motor_cmd[i].kd = 0.1
+			self.motor_cmd[i].kp = 1.0
+			self.motor_cmd[i].kd = 0.012
 
 	
 	def run_motor_callback(self, msg):
@@ -68,46 +70,43 @@ class QuataSim(MuJoCoBase):
 		# quaternion format is: [w,x,y,z] -> (cos(t/2), sin(t/2)*x,sin(t/2)*y,sin*z)
 
 		# publish Imu data
-		bodyImu = Imu()
-		bodyImu.orientation.w = self.data.sensor('BodyQuat').data[0].copy()
-		bodyImu.orientation.x = self.data.sensor('BodyQuat').data[1].copy()
-		bodyImu.orientation.y = self.data.sensor('BodyQuat').data[2].copy()
-		bodyImu.orientation.z = self.data.sensor('BodyQuat').data[3].copy()
-		bodyImu.angular_velocity.x = self.data.sensor('BodyGyro').data[0].copy()
-		bodyImu.angular_velocity.y = self.data.sensor('BodyGyro').data[1].copy()
-		bodyImu.angular_velocity.z = self.data.sensor('BodyGyro').data[2].copy()
-		bodyImu.linear_acceleration.x = self.data.sensor('BodyAcc').data[0].copy()
-		bodyImu.linear_acceleration.y = self.data.sensor('BodyAcc').data[1].copy()
-		bodyImu.linear_acceleration.z = self.data.sensor('BodyAcc').data[2].copy()
-		self.pubImu.publish(bodyImu)
+		self.bodyImu = Imu()
+		self.bodyImu.orientation.w = self.data.sensor('BodyQuat').data[0].copy()
+		self.bodyImu.orientation.x = self.data.sensor('BodyQuat').data[1].copy()
+		self.bodyImu.orientation.y = self.data.sensor('BodyQuat').data[2].copy()
+		self.bodyImu.orientation.z = self.data.sensor('BodyQuat').data[3].copy()
+		self.bodyImu.angular_velocity.x = self.data.sensor('BodyGyro').data[0].copy()
+		self.bodyImu.angular_velocity.y = self.data.sensor('BodyGyro').data[1].copy()
+		self.bodyImu.angular_velocity.z = self.data.sensor('BodyGyro').data[2].copy()
+		self.bodyImu.linear_acceleration.x = self.data.sensor('BodyAcc').data[0].copy()
+		self.bodyImu.linear_acceleration.y = self.data.sensor('BodyAcc').data[1].copy()
+		self.bodyImu.linear_acceleration.z = self.data.sensor('BodyAcc').data[2].copy()
+		self.pubImu.publish(self.bodyImu)
 
 		# publish Motor data       ID :0~2 -> A B C
-		bodyMotor = [motor_data(), motor_data(), motor_data()]
-		bodyMotor[0].id = 1
-		bodyMotor[0].pos = self.data.sensor('JointAPos').data.copy()
-		bodyMotor[0].vel = self.data.sensor('JointAVel').data.copy()
-		bodyMotor[0].tor = self.motor_cmd[1].tor_tar
-		bodyMotor[1].id = 2
-		bodyMotor[1].pos = self.data.sensor('JointBPos').data.copy()
-		bodyMotor[1].vel = self.data.sensor('JointBVel').data.copy()
-		bodyMotor[1].tor = self.motor_cmd[2].tor_tar
-		bodyMotor[2].id = 3
-		bodyMotor[2].pos = self.data.sensor('JointCPos').data.copy()
-		bodyMotor[2].vel = self.data.sensor('JointCVel').data.copy()
-		bodyMotor[2].tor = self.motor_cmd[3].tor_tar
-		self.pubMotor.publish(bodyMotor[0])
-		self.pubMotor.publish(bodyMotor[1])
-		self.pubMotor.publish(bodyMotor[2])		
+		# bodyMotor = [motor_data(), motor_data(), motor_data()]
+		self.bodyMotor[0].id = 1
+		self.bodyMotor[0].pos = self.data.sensor('JointAPos').data.copy()
+		self.bodyMotor[0].vel = self.data.sensor('JointAVel').data.copy()
+		self.bodyMotor[0].tor = self.motor_cmd[1].tor_tar
+		self.bodyMotor[1].id = 2
+		self.bodyMotor[1].pos = self.data.sensor('JointBPos').data.copy()
+		self.bodyMotor[1].vel = self.data.sensor('JointBVel').data.copy()
+		self.bodyMotor[1].tor = self.motor_cmd[2].tor_tar
+		self.bodyMotor[2].id = 3
+		self.bodyMotor[2].pos = self.data.sensor('JointCPos').data.copy()
+		self.bodyMotor[2].vel = self.data.sensor('JointCVel').data.copy()
+		self.bodyMotor[2].tor = self.motor_cmd[3].tor_tar
+		self.pubMotor.publish(self.bodyMotor[0])
+		self.pubMotor.publish(self.bodyMotor[1])
+		self.pubMotor.publish(self.bodyMotor[2])		
 
 	def apply_force(self):
 		for i in range(1, 4):
 			msg = self.motor_cmd[i]
-			kp = msg.kp
-			kd = msg.kd
-			motor_id = self.data.joint('JointupperLeg'+self.map_id_to_motor[i]).id
-			self.data.qfrc_applied[motor_id] = msg.tor_tar +\
-			kp*(msg.pos_tar - self.data.qpos[motor_id]) +\
-			kd*(msg.vel_tar - self.data.qvel[motor_id])
+			self.data.ctrl[i - 1] = msg.tor_tar +\
+			msg.kp*(msg.pos_tar - self.bodyMotor[i - 1].pos) +\
+			msg.kd*(msg.vel_tar - self.bodyMotor[i - 1].vel)
 	
 	def reset(self):
 		# Set camera configuration
@@ -120,8 +119,8 @@ class QuataSim(MuJoCoBase):
 			self.motor_cmd[i].pos_tar = 0.0
 			self.motor_cmd[i].vel_tar = 0.0
 			self.motor_cmd[i].tor_tar = 0.0
-			self.motor_cmd[i].kp = 5
-			self.motor_cmd[i].kd = 0.1
+			self.motor_cmd[i].kp = 1.0
+			self.motor_cmd[i].kd = 0.012
  
 	def simulate(self):
 		while not glfw.window_should_close(self.window):
@@ -129,22 +128,20 @@ class QuataSim(MuJoCoBase):
 
 			while (self.data.time - simstart <= 1.0/60.0 and not self.pause_flag):
 				# get current absolute time 
-				now = glfw.get_time()		
+				now = glfw.get_time()
+
+				# Publish joint positions and velocities
+				self.get_sensor_data_and_publish()
 
 				#apply force to motor
 				self.apply_force()
 
-				print("ground force:", self.data.sensor('touchSensor').data.copy())
-				# Step simulation environment
-				mj.mj_step(self.model, self.data)
+				# print("ground force:", self.data.sensor('touchSensor').data.copy())
 		
-				# * Publish joint positions and velocities
-				self.get_sensor_data_and_publish()
-					
-
 				# sleep untile 2ms don't use rospy.Rate
 				while (glfw.get_time() - now) < 0.00099:
-					pass
+					# Step simulation environment
+					mj.mj_step(self.model, self.data)
 			
 			if self.data.time >= self.simend:
 				break
@@ -170,7 +167,7 @@ class QuataSim(MuJoCoBase):
 
 def main():
 	# ros init
-	rospy.init_node('pai_sim', anonymous=True)
+	rospy.init_node('quata_sim', anonymous=True)
 
 	# get xml path
 	rospack = rospkg.RosPack()
