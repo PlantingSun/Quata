@@ -389,44 +389,44 @@ namespace controller
         }
     }
     
-    void JumpController::QuattoRotMat(controller::body_data& body)
+    void JumpController::QuattoRotMat(double* quat,double (*rot_mat)[3])
     {
-        double xsq = body.orient[1] * body.orient[1];
-        double ysq = body.orient[2] * body.orient[2];
-        double zsq = body.orient[3] * body.orient[3];
-        double xyt = body.orient[1] * body.orient[2];
-        double xzt = body.orient[1] * body.orient[3];
-        double xwt = body.orient[1] * body.orient[0];
-        double yzt = body.orient[2] * body.orient[3];
-        double ywt = body.orient[2] * body.orient[0];
-        double zwt = body.orient[3] * body.orient[0];
+        double xsq = quat[1] * quat[1];
+        double ysq = quat[2] * quat[2];
+        double zsq = quat[3] * quat[3];
+        double xyt = quat[1] * quat[2];
+        double xzt = quat[1] * quat[3];
+        double xwt = quat[1] * quat[0];
+        double yzt = quat[2] * quat[3];
+        double ywt = quat[2] * quat[0];
+        double zwt = quat[3] * quat[0];
 
-        body.rot_mat[0][0] = 1.0 - 2.0 * ysq - 2.0 * zsq;
-        body.rot_mat[0][1] = 2.0 * xyt - 2.0 * zwt;
-        body.rot_mat[0][2] = 2.0 * xzt + 2.0 * ywt;
-        body.rot_mat[1][0] = 2.0 * xyt + 2.0 * zwt;
-        body.rot_mat[1][1] = 1.0 - 2.0 * xsq - 2.0 * zsq;
-        body.rot_mat[1][2] = 2.0 * yzt - 2.0 * xwt;
-        body.rot_mat[2][0] = 2.0 * xzt - 2.0 * ywt;
-        body.rot_mat[2][1] = 2.0 * yzt + 2.0 * xwt;
-        body.rot_mat[2][2] = 1.0 - 2.0 * xsq - 2.0 * ysq;
+        rot_mat[0][0] = 1.0 - 2.0 * ysq - 2.0 * zsq;
+        rot_mat[0][1] = 2.0 * xyt - 2.0 * zwt;
+        rot_mat[0][2] = 2.0 * xzt + 2.0 * ywt;
+        rot_mat[1][0] = 2.0 * xyt + 2.0 * zwt;
+        rot_mat[1][1] = 1.0 - 2.0 * xsq - 2.0 * zsq;
+        rot_mat[1][2] = 2.0 * yzt - 2.0 * xwt;
+        rot_mat[2][0] = 2.0 * xzt - 2.0 * ywt;
+        rot_mat[2][1] = 2.0 * yzt + 2.0 * xwt;
+        rot_mat[2][2] = 1.0 - 2.0 * xsq - 2.0 * ysq;
     }
 
-    void JumpController::QuattoEuler(controller::body_data& body)
+    void JumpController::QuattoEuler(double* quat,double& roll,double& pitch,double& yaw)
     {
         // roll (x-axis rotation)
-        double sinr_cosp = 2.0 * (body.orient[0] * body.orient[1] + body.orient[2] * body.orient[3]);
-        double cosr_cosp = 1.0 - 2.0 * (body.orient[1] * body.orient[1] + body.orient[2] * body.orient[2]);
-        body.roll = std::atan2(sinr_cosp, cosr_cosp);
+        double sinr_cosp = 2.0 * (quat[0] * quat[1] + quat[2] * quat[3]);
+        double cosr_cosp = 1.0 - 2.0 * (quat[1] * quat[1] + quat[2] * quat[2]);
+        roll = std::atan2(sinr_cosp, cosr_cosp);
     
         // pitch (y-axis rotation)
-        double sinp = 2.0 * (body.orient[0] * body.orient[2] - body.orient[3] * body.orient[1]);
-        body.pitch = std::asin(sinp);
+        double sinp = 2.0 * (quat[0] * quat[2] - quat[3] * quat[1]);
+        pitch = std::asin(sinp);
     
         // yaw (z-axis rotation)
-        double siny_cosp = 2.0 * (body.orient[0] * body.orient[3] + body.orient[1] * body.orient[2]);
-        double cosy_cosp = 1.0 - 2.0 * (body.orient[2] * body.orient[2] + body.orient[3] * body.orient[3]);
-        body.yaw = std::atan2(siny_cosp, cosy_cosp);
+        double siny_cosp = 2.0 * (quat[0] * quat[3] + quat[1] * quat[2]);
+        double cosy_cosp = 1.0 - 2.0 * (quat[2] * quat[2] + quat[3] * quat[3]);
+        yaw = std::atan2(siny_cosp, cosy_cosp);
     }
 
     void JumpController::UpdateParam(controller::body_data& body)
@@ -435,8 +435,8 @@ namespace controller
         delta.ForwardKinematicsVF(body.leg[0]);
 
         /* IMU for Body */
-        QuattoRotMat(body);
-        QuattoEuler(body);
+        QuattoRotMat(body.orient,body.rot_mat);
+        QuattoEuler(body.orient,body.roll,body.pitch,body.yaw);
 
         // printf("yaw:%lf pitch:%lf roll:%lf\n",body.yaw,body.pitch,body.roll);
 
@@ -445,16 +445,15 @@ namespace controller
             body.acc[i] = 0.0;
             for(int j = 0;j < 3;j++)
                 body.acc[i]+= body.rot_mat[i][j] * body.raw_acc[j];
-            // printf("%lf\n",body.acc[i]);
         }
         // if(body.raw_acc[2] != 0.0)
         //     body.acc[2]-= 9.92;
-        // for(int i = 0;i < 3;i++)
-        // {
-        //     body.vel[i]+= body.acc[i] / ctrl_rate;
-        //     body.pos[i]+= body.vel[i] / ctrl_rate;
-        //     printf("%lf %lf\n",body.vel[i],body.pos[i]);
-        // }
+        for(int i = 0;i < 3;i++)
+        {
+            // body.vel[i]+= body.acc[i] / ctrl_rate;
+            body.pos[i]+= body.vel[i] / ctrl_rate;
+            printf("%lf %lf\n",body.vel[i],body.pos[i]);
+        }
     }
 
     void JumpController::JudgeState(controller::body_data& body)
@@ -528,7 +527,7 @@ namespace controller
         //     SetLandingForce();
         // }
 
-        SetLandingForce(body);
+        // SetLandingForce(body);
     }
 }
 
@@ -588,6 +587,13 @@ void imuCallback(const sensor_msgs::Imu::ConstPtr& imu_msg,controller::body_data
     (*body_data).raw_acc[2] = (*imu_msg).linear_acceleration.z;
 }
 
+void dvCallback(const geometry_msgs::Vector3Stamped::ConstPtr& dv_msg,controller::body_data* body_data)
+{
+    (*body_data).vel[0] = (*dv_msg).vector.x;
+    (*body_data).vel[1] = (*dv_msg).vector.y;
+    (*body_data).vel[2] = (*dv_msg).vector.z;
+}
+
 int main(int argc, char **argv)
 {
     /* variables */
@@ -611,6 +617,9 @@ int main(int argc, char **argv)
 
     ros::Subscriber body_imu = 
     nh.subscribe<sensor_msgs::Imu>("imu/data", 1, boost::bind(&imuCallback,_1,&body));
+
+    ros::Subscriber body_dv = 
+    nh.subscribe<geometry_msgs::Vector3Stamped>("imu/dv", 1, boost::bind(&dvCallback,_1,&body));
 
     ros::Rate loop_rate(loop_hz);
 

@@ -19,6 +19,7 @@
 #include "std_msgs/String.h"
 #include "std_msgs/Float32MultiArray.h"
 #include "sensor_msgs/Imu.h"
+#include "geometry_msgs/Vector3Stamped.h"
 
 #include <unistd.h>
 
@@ -96,8 +97,8 @@ namespace controller{
             }
             void Controller(controller::body_data& body);
         private:
-            void QuattoRotMat(controller::body_data& body);
-            void QuattoEuler(controller::body_data& body);
+            void QuattoRotMat(double* quat,double (*rot_mat)[3]);
+            void QuattoEuler(double* quat,double& roll,double& pitch,double& yaw);
             void UpdateParam(controller::body_data& body);
             void JudgeState(controller::body_data& body);
             void SetFlyingAngle(controller::body_data& body);

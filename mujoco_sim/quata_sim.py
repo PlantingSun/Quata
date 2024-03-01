@@ -8,6 +8,7 @@ import rospkg
 from std_msgs.msg import Float32MultiArray,Bool
 from geometry_msgs.msg import Pose,Twist,Quaternion
 from sensor_msgs.msg import Imu
+from geometry_msgs.msg import Vector3Stamped
 from mujoco_sim.msg import motor_data
 import threading
 
@@ -25,6 +26,7 @@ class QuataSim(MuJoCoBase):
 
 		# * Set subscriber and publisher
 		self.pubImu = rospy.Publisher('/imu/data', Imu, queue_size=1)
+		self.pubdv = rospy.Publisher('/imu/dv', Vector3Stamped, queue_size=1)
 		self.pubMotor = rospy.Publisher('/cybergear_msgs', motor_data, queue_size=6)
 		rospy.Subscriber("/cybergear_cmds", motor_data, self.run_motor_callback, queue_size=10)
 		# * show the model
@@ -42,14 +44,15 @@ class QuataSim(MuJoCoBase):
 		mj.mjr_render(viewport, self.scene, self.context)
 
 		#init
-		self.bodyIMU = Imu()
+		self.bodyImu = Imu()
+		self.bodydv = Vector3Stamped()
 		self.bodyMotor = [motor_data(), motor_data(), motor_data()]
 		for i in range(1,4):
 			self.motor_cmd[i].pos_tar = 0.0
 			self.motor_cmd[i].vel_tar = 0.0
 			self.motor_cmd[i].tor_tar = 0.0
-			self.motor_cmd[i].kp = 1.0
-			self.motor_cmd[i].kd = 0.012
+			self.motor_cmd[i].kp = 2.5
+			self.motor_cmd[i].kd = 0.02
 
 	
 	def run_motor_callback(self, msg):
@@ -70,7 +73,6 @@ class QuataSim(MuJoCoBase):
 		# quaternion format is: [w,x,y,z] -> (cos(t/2), sin(t/2)*x,sin(t/2)*y,sin*z)
 
 		# publish Imu data
-		self.bodyImu = Imu()
 		self.bodyImu.orientation.w = self.data.sensor('BodyQuat').data[0].copy()
 		self.bodyImu.orientation.x = self.data.sensor('BodyQuat').data[1].copy()
 		self.bodyImu.orientation.y = self.data.sensor('BodyQuat').data[2].copy()
@@ -82,6 +84,12 @@ class QuataSim(MuJoCoBase):
 		self.bodyImu.linear_acceleration.y = self.data.sensor('BodyAcc').data[1].copy()
 		self.bodyImu.linear_acceleration.z = self.data.sensor('BodyAcc').data[2].copy()
 		self.pubImu.publish(self.bodyImu)
+
+		# publish dv data
+		self.bodydv.vector.x = self.data.sensor('BodyVel').data[0].copy()
+		self.bodydv.vector.y = self.data.sensor('BodyVel').data[1].copy()
+		self.bodydv.vector.z = self.data.sensor('BodyVel').data[2].copy()
+		self.pubdv.publish(self.bodydv)
 
 		# publish Motor data       ID :0~2 -> A B C
 		# bodyMotor = [motor_data(), motor_data(), motor_data()]
@@ -119,8 +127,8 @@ class QuataSim(MuJoCoBase):
 			self.motor_cmd[i].pos_tar = 0.0
 			self.motor_cmd[i].vel_tar = 0.0
 			self.motor_cmd[i].tor_tar = 0.0
-			self.motor_cmd[i].kp = 1.0
-			self.motor_cmd[i].kd = 0.012
+			self.motor_cmd[i].kp = 2.5
+			self.motor_cmd[i].kd = 0.02
  
 	def simulate(self):
 		while not glfw.window_should_close(self.window):
@@ -136,12 +144,14 @@ class QuataSim(MuJoCoBase):
 				#apply force to motor
 				self.apply_force()
 
+				# Step simulation environment
+				mj.mj_step(self.model, self.data)
+
 				# print("ground force:", self.data.sensor('touchSensor').data.copy())
 		
 				# sleep untile 2ms don't use rospy.Rate
 				while (glfw.get_time() - now) < 0.00099:
-					# Step simulation environment
-					mj.mj_step(self.model, self.data)
+					pass
 			
 			if self.data.time >= self.simend:
 				break
