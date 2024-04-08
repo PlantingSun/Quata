@@ -3,6 +3,7 @@
   <!-- <option  -->
   <compiler angle="radian" meshdir="../meshes/" />
   <statistic meansize="0.03" extent="0.465147" center="-0.0174153 1.79806e-11 -0.0268814"/>
+  <option timestep="0.001" integrator="RK4"/>
   <asset>
     <mesh name="base_link" file="base_link.STL"/>
     <mesh name="End" file="End.STL"/>

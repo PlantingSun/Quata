@@ -151,6 +151,8 @@ add_dependencies(
 add_executable(
   JumpController
   src/JumpController.cpp
+  src/DeltaMechanism.cpp
+  src/NNInterface.cpp
 )
 
 ## Rename C++ executable without prefix

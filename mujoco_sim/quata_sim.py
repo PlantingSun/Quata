@@ -5,7 +5,7 @@ from mujoco_base import MuJoCoBase
 from mujoco.glfw import glfw
 import rospy
 import rospkg
-from std_msgs.msg import Float32MultiArray,Bool
+from std_msgs.msg import String
 from geometry_msgs.msg import Pose,Twist,Quaternion
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3Stamped
@@ -29,6 +29,7 @@ class QuataSim(MuJoCoBase):
 		self.pubdv = rospy.Publisher('/imu/dv', Vector3Stamped, queue_size=1)
 		self.pubMotor = rospy.Publisher('/cybergear_msgs', motor_data, queue_size=6)
 		rospy.Subscriber("/cybergear_cmds", motor_data, self.run_motor_callback, queue_size=10)
+		self.pubPause = rospy.Publisher('/pause', String, queue_size=1)
 		# * show the model
 		mj.mj_step(self.model, self.data)
 		# enable contact force visualization
@@ -107,7 +108,10 @@ class QuataSim(MuJoCoBase):
 		self.bodyMotor[2].tor = self.motor_cmd[3].tor_tar
 		self.pubMotor.publish(self.bodyMotor[0])
 		self.pubMotor.publish(self.bodyMotor[1])
-		self.pubMotor.publish(self.bodyMotor[2])		
+		self.pubMotor.publish(self.bodyMotor[2])
+
+		# publish Pause data
+		self.pubPause.publish('0')		
 
 	def apply_force(self):
 		for i in range(1, 4):
@@ -134,6 +138,9 @@ class QuataSim(MuJoCoBase):
 		while not glfw.window_should_close(self.window):
 			simstart = self.data.time
 
+			if self.pause_flag:
+				self.pubPause.publish('1')
+
 			while (self.data.time - simstart <= 1.0/60.0 and not self.pause_flag):
 				# get current absolute time 
 				now = glfw.get_time()
@@ -149,7 +156,7 @@ class QuataSim(MuJoCoBase):
 
 				# print("ground force:", self.data.sensor('touchSensor').data.copy())
 		
-				# sleep untile 2ms don't use rospy.Rate
+				# sleep until 1ms don't use rospy.Rate
 				while (glfw.get_time() - now) < 0.00099:
 					pass
 			
