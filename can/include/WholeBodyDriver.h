@@ -32,7 +32,7 @@ struct motor_data{
 /* CyberGear Instruction Generator */
 class CyberGearDriver{
 public:
-    void AskID(struct can_frame& frame);
+    void AskID(struct can_frame& frame,uint16_t id);
     void MixControl(struct can_frame& frame,
                     wholebodydriver::motor_data& motor_state);
     void Enable(struct can_frame& frame,uint16_t id);
@@ -49,7 +49,7 @@ public:
 
 private:
     enum msg_type{
-    getID = 0,
+    askID = 0,
     mixContorl = 1,
     enableMotor = 3,
     disableMotor = 4,

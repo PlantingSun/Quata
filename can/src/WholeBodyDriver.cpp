@@ -39,9 +39,14 @@ namespace wholebodydriver
         data8B[3] = ((uint16_t)frame.data[6] << 8) | (uint16_t)frame.data[7];
     }
     /* public */
-    void CyberGearDriver::AskID(struct can_frame& frame)
+    void CyberGearDriver::AskID(struct can_frame& frame,uint16_t id)
     {
-
+        datainid = masterid;
+        data8B[0] = 0;
+        data8B[1] = 0;
+        data8B[2] = 0;
+        data8B[3] = 0;
+        Encode(id,askID,frame);
     }
 
     void CyberGearDriver::MixControl(struct can_frame& frame,
@@ -87,7 +92,13 @@ namespace wholebodydriver
 
     void CyberGearDriver::SetCANID(struct can_frame& frame,uint16_t id)
     {
-
+        datainid = 0;
+        datainid |= (0x01<<8);
+        data8B[0] = 0;
+        data8B[1] = 0;
+        data8B[2] = 0;
+        data8B[3] = 0;
+        Encode(id,setCANID,frame);
     }
 
     void CyberGearDriver::SetSingleParam(struct can_frame& frame,uint16_t id)
@@ -332,7 +343,7 @@ int main(int argc, char **argv)
         
         quata.SendReadOnce();
 
-        for(int i = 0;i < 3;i++)
+        for(int i = 0;i < jointnum;i++)
         {
             motor_msg.id = joint[i].ID;
             motor_msg.pos = joint[i].pos;
