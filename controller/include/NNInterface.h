@@ -16,8 +16,9 @@
 #include "sensor_msgs/Imu.h"
 #include "geometry_msgs/Vector3Stamped.h"
 
+#include <iostream>
 // #include <torch/script.h>
-// #include "torch/torch.h"
+#include <Eigen/Dense>
 
 namespace controller{
     class NNInterface{
@@ -31,6 +32,7 @@ namespace controller{
                 pos_scale = pos_scale_;
                 vel_scale = vel_scale_;
             }
+            void Init();
             void NNForward(double* input,double* output);
         private:
             void BuildInput();
@@ -38,6 +40,10 @@ namespace controller{
             void BuildOutput();
             double lin_vel_scale,ang_vel_scale,commands_scale;
             double pos_scale,vel_scale;
+
+            // torch::jit::script::Module module;
+            // std::vector<torch::jit::IValue> inputs;
+            // std::vector<torch::jit::IValue> outputs;
     };
 }
 

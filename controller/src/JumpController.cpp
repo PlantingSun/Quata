@@ -280,6 +280,7 @@ int main(int argc, char **argv)
     controller::NNInterface nn(1.0,2.0,1.0,1.0,1.0);
     controller::JumpController jc(212.0, 1.0, 0.05, 1.0, 0.012, loop_hz, &nn);
     can::motor_data motor_cmd;
+    nn.Init();
 
     /* loop */
     while (ros::ok())
@@ -298,7 +299,7 @@ int main(int argc, char **argv)
                 motor_cmd.tor_tar = joint[i].tor_tar;
                 motor_cmd.kp = joint[i].kp;
                 motor_cmd.kd = joint[i].kd;
-                motor_pub.publish(motor_cmd);
+                // motor_pub.publish(motor_cmd);
             }
             countl++;
             if(countl == loop_hz)

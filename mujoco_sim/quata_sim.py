@@ -53,7 +53,8 @@ class QuataSim(MuJoCoBase):
 			self.motor_cmd[i].vel_tar = 0.0
 			self.motor_cmd[i].tor_tar = 0.0
 			self.motor_cmd[i].kp = 2.5
-			self.motor_cmd[i].kd = 0.02
+			self.motor_cmd[i].kd = 0.1
+		self.rate = 0
 
 	
 	def run_motor_callback(self, msg):
@@ -132,7 +133,7 @@ class QuataSim(MuJoCoBase):
 			self.motor_cmd[i].vel_tar = 0.0
 			self.motor_cmd[i].tor_tar = 0.0
 			self.motor_cmd[i].kp = 2.5
-			self.motor_cmd[i].kd = 0.02
+			self.motor_cmd[i].kd = 0.1
  
 	def simulate(self):
 		while not glfw.window_should_close(self.window):
@@ -154,6 +155,8 @@ class QuataSim(MuJoCoBase):
 				# Step simulation environment
 				mj.mj_step(self.model, self.data)
 
+				self.rate = self.rate+1
+
 				# print("ground force:", self.data.sensor('touchSensor').data.copy())
 		
 				# sleep until 1ms don't use rospy.Rate
@@ -162,6 +165,9 @@ class QuataSim(MuJoCoBase):
 			
 			if self.data.time >= self.simend:
 				break
+
+			# print(self.rate)
+			self.rate = 0
 
 			# get framebuffer viewport
 			viewport_width, viewport_height = glfw.get_framebuffer_size(

@@ -1,9 +1,10 @@
 <mujoco model="quata">
-  <!-- <option gravity="0 0 0"/> -->
+  <option gravity="0 0 -9.81"/>
   <!-- <option  -->
   <compiler angle="radian" meshdir="../meshes/" />
   <statistic meansize="0.03" extent="0.465147" center="-0.0174153 1.79806e-11 -0.0268814"/>
   <option timestep="0.001" integrator="RK4"/>
+  <!-- <option timestep="0.00099"/> -->
   <asset>
     <mesh name="base_link" file="base_link.STL"/>
     <mesh name="End" file="End.STL"/>
@@ -49,7 +50,7 @@
       <freejoint/>
     </body> -->
     
-    <body name="base" pos = "0 0 0.50">
+    <body name="base" pos = "0 0 0.212">
       <!--freejoint用来控制baselink是不是浮动的-->
       <freejoint />
       <site name="Imu" size=".01" pos="0 0 0"/>
@@ -58,7 +59,7 @@
       <!-- <joint name="basehingey" pos="0 0 0" axis="0 1 0" type="hinge"/> -->
       <!-- <joint name="baseslidey" pos="0 0 0" axis="0 1 0" type="slide"/> -->
 
-      <inertial pos="0 0 0.042512" quat="0 0 0 1" mass="1.087" diaginertia="2.7582e-03 2.7582e-03 4.6608e-03"/>
+      <inertial pos="0 0 0.042512" quat="0 0 0 1" mass="1.0" diaginertia="2.7582e-03 2.7582e-03 4.6608e-03"/>
       <geom type="mesh" contype="1" conaffinity="0" rgba="1 1 1 1" mesh="base_link"/>
       <body name="upperLegA" pos="-0.0625 0 0.0425" quat="0 0 -0.707107 0.707107">
         <inertial pos="0.045958 0 0" quat="0 0 0 1" mass="0.034" diaginertia="1.884e-06 5.2367e-05 5.3574e-05"/>
@@ -80,7 +81,7 @@
                 <inertial pos="0.0113397 -0.0055 -0.039641" quat="0 0 0 1" mass="0.043" diaginertia="1.5809e-05 2.1146e-05 1.5809e-05"/>
                 <joint name="End" pos="0 0 0" axis="0.866027 0 0.499998"/>
                 <geom type="mesh" contype="1" conaffinity="0" condim="6" friction="1 0.005 0.0001" rgba="1 0.3882 0.2784 1" mesh="End" solref="-8000 -1"/>
-                <site name="EndSite" size=".03" pos="0.0113397 -0.0055 -0.039641"/>
+                <!-- <site name="EndSite" size=".03" pos="0.0113397 -0.0055 -0.039641"/> -->
               </body>
             </body>
           </body>
@@ -191,7 +192,7 @@
     <actuatorfrc name="JointCTor" actuator="JointC_motor" noise="0"/> 
     
     <!-- touch -->
-    <touch name="touchSensor" site="EndSite"/>
+    <!-- <touch name="touchSensor" site="EndSite"/> -->
 
   </sensor>
 
