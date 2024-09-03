@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="RLSLIP">
+  <mujoco>
+    <compiler meshdir="../meshes/" balanceinertia="true" discardvisual="false"/>
+  </mujoco>
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="-0.0014035 0.0 -0.049588"
+        rpy="0 0 0" />
+      <mass
+        value="2.6327" />
+      <inertia
+        ixx="0.015649"
+        ixy="0.0"
+        ixz="-0.00010128"
+        iyy="0.014904"
+        iyz="0.0"
+        izz="0.027811" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <!-- <mesh
+          filename="../meshes/base_link.STL" /> -->
+        <sphere radius="0.185"/>
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="xdof_Link">
+    <inertial>
+      <origin
+        xyz="0.0 0.0 -0.011032"
+        rpy="0 0 0" />
+      <mass
+        value="0.025" />
+      <inertia
+        ixx="9.6505E-05"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="4.3121E-06"
+        iyz="0.0"
+        izz="9.9536E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/xdof_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <!-- <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/xdof_Link.STL" />
+      </geometry>
+    </collision> -->
+  </link>
+  <joint
+    name="xdof_Joint"
+    type="prismatic">
+    <origin
+      xyz="0 0 -0.072"
+      rpy="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="xdof_Link" />
+    <axis
+      xyz="1 0 0" />
+    <limit
+      lower="-0.075"
+      upper="0.075"
+      effort="100"
+      velocity="2.0" />
+  </joint>
+  <link
+    name="ydof_Link">
+    <inertial>
+      <origin
+        xyz="0.0 0.0 -0.097"
+        rpy="0 0 0" />
+      <mass
+        value="0.050" />
+      <inertia
+        ixx="0.00016108"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="0.00016108"
+        iyz="0.0"
+        izz="4.4136E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/ydof_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <!-- <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/ydof_Link.STL" />
+      </geometry>
+    </collision> -->
+  </link>
+  <joint
+    name="ydof_Joint"
+    type="prismatic">
+    <origin
+      xyz="0 0 -0.013"
+      rpy="0 0 0" />
+    <parent
+      link="xdof_Link" />
+    <child
+      link="ydof_Link" />
+    <axis
+      xyz="0 -1 0" />
+    <limit
+      lower="-0.075"
+      upper="0.075"
+      effort="100"
+      velocity="2.0" />
+  </joint>
+  <link
+    name="zdof_Link">
+    <inertial>
+      <origin
+        xyz="0.0 0.0 0.0046192"
+        rpy="0 0 0" />
+      <mass
+        value="0.020" />
+      <inertia
+        ixx="7.069E-06"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="7.069E-06"
+        iyz="0.0"
+        izz="1.7683E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/zdof_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="../meshes/zdof_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="zdof_Joint"
+    type="prismatic">
+    <origin
+      xyz="0 0 -0.194"
+      rpy="0 0 0" />
+    <parent
+      link="ydof_Link" />
+    <child
+      link="zdof_Link" />
+    <axis
+      xyz="0 0 -1" />
+    <limit
+      lower="0.0"
+      upper="0.075"
+      effort="150"
+      velocity="2.0" />
+  </joint>
+</robot>

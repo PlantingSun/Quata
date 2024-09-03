@@ -1,0 +1,32 @@
+<mujoco model="RLSLIP">
+  <compiler angle="radian" meshdir="../meshes/"/>
+  <asset>
+    <mesh name="base_link" file="base_link.STL"/>
+    <mesh name="xdof_Link" file="xdof_Link.STL"/>
+    <mesh name="ydof_Link" file="ydof_Link.STL"/>
+    <mesh name="zdof_Link" file="zdof_Link.STL"/>
+  </asset>
+  <worldbody>
+    <body name="base_Link" pos="0 0 0">
+      <inertial pos="-0.001404 0 -0.04959" quat="0 0 0 1" mass="2.6327" diaginertia="0.015649 0.014904 0.027811"/>
+      <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="base_link"/>
+      <geom type="mesh" rgba="1 1 1 1" mesh="base_link"/>
+      <body name="xdof_Link" pos="0 0 -0.072">
+        <inertial pos="0 0 -0.011032" quat="0.5 0.5 -0.5 0.5" mass="0.025" diaginertia="9.9536e-05 9.6505e-05 4.3121e-06"/>
+        <joint name="xdof_Joint" pos="0 0 0" axis="1 0 0" type="slide" limited="true" range="-0.075 0.075"/>
+        <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="xdof_Link"/>
+        <body name="ydof_Link" pos="0 0 -0.013">
+          <inertial pos="0 0 -0.097" mass="0.05" diaginertia="0.00016108 0.00016108 4.4136e-06"/>
+          <joint name="ydof_Joint" pos="0 0 0" axis="0 -1 0" type="slide" limited="true" range="-0.075 0.075"/>
+          <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="ydof_Link"/>
+          <body name="zdof_Link" pos="0 0 -0.194">
+            <inertial pos="0 0 0.0046192" mass="0.02" diaginertia="7.069e-06 7.069e-06 1.7683e-06"/>
+            <joint name="zdof_Joint" pos="0 0 0" axis="0 0 -1" type="slide" limited="true" range="0 0.075"/>
+            <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="1 1 1 1" mesh="zdof_Link"/>
+            <geom type="mesh" rgba="1 1 1 1" mesh="zdof_Link"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+</mujoco>

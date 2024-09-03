@@ -1,0 +1,75 @@
+<mujoco model="RLSLIP">
+  <option gravity="0 0 -9.81"/>
+  <compiler angle="radian" meshdir="../meshes/"/>
+  <statistic meansize="0.0845861" extent="0.535157" center="-0.000773518 1.58376e-09 -0.059744"/>
+  <option timestep="0.001" integrator="RK4"/>
+  <asset>
+    <mesh name="base_link" file="base_link.STL"/>
+    <mesh name="xdof_Link" file="xdof_Link.STL"/>
+    <mesh name="ydof_Link" file="ydof_Link.STL"/>
+    <mesh name="zdof_Link" file="zdof_Link.STL"/>
+
+    <texture name="grid" type="2d" builtin="checker" rgb1="0.75 0.75 0.75" rgb2="0.6 0.9 1.0" width="500" height="500"/>
+    <material name="grid" texture="grid" texrepeat="10 10" reflectance=".1"/>
+  </asset>
+
+  <default>
+    <geom contype="0" conaffinity="0" />  
+  </default> 
+
+  <worldbody>
+    <light name="top" pos="0 0 15" castshadow="false" />
+    <geom name="floor" size="10 10 .01" type="plane" pos="0 0 0" material="grid" contype="1" conaffinity="1" />
+
+    <body name="base_Link" pos="0 0 0.297">
+      <freejoint />
+      <site name="Imu" size=".01" pos="0 0 0"/>
+      <inertial pos="-0.001404 0 -0.04959" quat="0 0 0 1" mass="2.6327" diaginertia="0.015649 0.014904 0.027811"/>
+      <geom type="mesh" contype="1" conaffinity="0" rgba="1 1 1 1" mesh="base_link"/>
+      <body name="xdof_Link" pos="0 0 -0.072">
+        <inertial pos="0 0 -0.011032" quat="0.5 0.5 -0.5 0.5" mass="0.037622" diaginertia="9.9536e-05 9.6505e-05 4.3121e-06"/>
+        <joint name="xdof_Joint" pos="0 0 0" axis="-1 0 0" type="slide" range="-0.075 0.075"/>
+        <geom type="mesh" rgba="1 1 1 1" mesh="xdof_Link"/>
+        <body name="ydof_Link" pos="0 0 -0.013">
+          <inertial pos="0 0 -0.097" mass="0.050657" diaginertia="0.00016108 0.00016108 4.4136e-06"/>
+          <joint name="ydof_Joint" pos="0 0 0" axis="0 -1 0" type="slide" range="-0.075 0.075"/>
+          <geom type="mesh" rgba="1 1 1 1" mesh="ydof_Link"/>
+          <body name="zdof_Link" pos="0 0 -0.194">
+            <inertial pos="0 0 0.0046192" mass="0.019409" diaginertia="7.069e-06 7.069e-06 1.7683e-06"/>
+            <joint name="zdof_Joint" pos="0 0 0" axis="0 0 -1" type="slide" range="-0.075 0.075"/>
+            <geom type="mesh" contype="1" conaffinity="0" rgba="1 1 1 1" mesh="zdof_Link"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <motor name="JointX_motor" gear="1" joint="xdof_Joint"/>
+    <motor name="JointY_motor" gear="1" joint="ydof_Joint" />
+    <motor name="JointZ_motor" gear="1" joint="zdof_Joint"/>
+  </actuator>
+
+  <sensor>
+    <!-- Imu data -->
+    <!-- Todo: add noise and cutoff -->
+    <framequat name="BodyQuat" objtype="site" objname="Imu"/>
+    <gyro name="BodyGyro" site="Imu" noise="0" />
+    <accelerometer name="BodyAcc" site="Imu" noise="0" cutoff="100"/>
+    <velocimeter name="BodyVel" site="Imu" noise="0" cutoff="100"/>
+    
+    <!-- Joint data -->
+    <actuatorpos name="JointXPos" actuator="JointX_motor" noise="0"/>
+    <actuatorpos name="JointYPos" actuator="JointY_motor" noise="0"/>
+    <actuatorpos name="JointZPos" actuator="JointZ_motor" noise="0"/>
+    
+    <actuatorvel name="JointXVel" actuator="JointX_motor" noise="0"/>
+    <actuatorvel name="JointYVel" actuator="JointY_motor" noise="0"/>
+    <actuatorvel name="JointZVel" actuator="JointZ_motor" noise="0"/>
+    
+    <actuatorfrc name="JointXTor" actuator="JointX_motor" noise="0"/>
+    <actuatorfrc name="JointYTor" actuator="JointY_motor" noise="0"/>
+    <actuatorfrc name="JointZTor" actuator="JointZ_motor" noise="0"/> 
+  </sensor>
+
+</mujoco>
