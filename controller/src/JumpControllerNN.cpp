@@ -44,14 +44,16 @@ namespace controller
 
     void JumpController::UpdateParam(controller::body_data& body)
     {
-        /* forward kinemtatics, calculate endp, endv, endf and Jacob */
+        // forward kinemtatics, calculate endp, endv, endf and Jacob
         delta.CalJacob(body.leg[0]);
         delta.ForwardKinematicsVF(body.leg[0]);
 
         /* IMU for Body */
         QuattoRotMat(body.orient,body.rot_mat);
         QuattoEuler(body.orient,body.roll,body.pitch,body.yaw);
-        /* acc, dv and pos */
+
+        printf("yaw:%lf pitch:%lf roll:%lf\n",body.yaw,body.pitch,body.roll);
+
         for(int i = 0;i < 3;i++)
         {
             body.acc[i] = 0.0;
@@ -64,100 +66,94 @@ namespace controller
             }
             body.pos[i]+= body.vel[i] / ctrl_rate;
         }
-        /* highest height during last hop */
-        if(state_height < body.pos[2])
-            state_height = body.pos[2];
-        /* end position in world coordinate*/
-        for(int i = 0;i < 3;i++)
-        {
-            body.leg[0].endp_wd[i] = 0.0;
-            for(int j = 0;j < 3;j++)
-            {
-                body.leg[0].endp_wd[i]-= body.rot_mat[i][j] * body.leg[0].endp[j] / 1000.0;
-            }
-            body.leg[0].endp_wd[i]+= body.pos[i];
-        }
-        body.leg[0].endp_wd[2]-= body.rot_mat[2][2] * 0.0345;
     }
 
-    void JumpController::JudgeState(controller::body_data& body,controller::user_data& user)
+    void JumpController::JudgeState(controller::body_data& body)
     {
-        if(body.state == stateFlying)
-        {
-            if(body.leg[0].len < l_0 * 0.95)
-            {
-                last_len = body.leg[0].len;
-                height_err = user.pos[2] - state_height;
-                integer_height_err+= height_err;
-                ROS_INFO(" hop height:%lf",state_height);
-                ROS_INFO("integer_err:%lf",integer_height_err);
-                state_height = 0;
-                ROS_INFO("stateLanding");
-                body.state = stateLanding;
-            }
-        }
-        else
-        {
-            if(body.leg[0].len >= l_0)
-            {
-                ROS_INFO("stance time:%lf",last_stance_time);
-                last_stance_time = 0;
-                ROS_INFO("stateFlying");
+        // if(first_minimum)
+        // {
+            double pos2 = 0.0;
+            for(int i = 0;i < 3;i++)
+                pos2+= body.rot_mat[2][i] * body.leg[0].endp[i] / 1000.0;
+            
+            if(body.pos[2] - pos2 > margin)
                 body.state = stateFlying;
-                
-                // body.pos[2] = 0.0;
-                // for(int j = 0;j < 3;j++)
-                //     body.pos[2]+= body.rot_mat[2][j] * body.leg[0].endp[j] / 1000.0;
-            }
-        }
+            else
+                body.state = stateLanding;
+
+            printf("%lf\n",body.pos[2] - pos2);
+        // }
+        // else
+        // {
+        //     body.state = stateLanding;
+        //     if(body.vel[2] > 0)
+        //     {
+        //         first_minimum = 1;
+        //         // body.pos[2] = body.leg[0].endp[2];
+        //         body.pos[2] = 0.0;
+        //         for(int i = 0;i < 3;i++)
+        //             body.pos[2]+= body.rot_mat[2][i] * body.leg[0].endp[i];
+        //     }
+        // }
     }
 
-    void JumpController::SetFlyingAngle(controller::body_data& body,controller::user_data& user)
+    void JumpController::SetFlyingAngle(controller::body_data& body)
     {
-        // forward velocity - flight position
-        body.leg[0].endp_tar[0] = 0.0;
-        body.leg[0].endp_tar[1] = 0.0;
-        body.leg[0].endp_tar[2] = l_0;
-        delta.InverseKinematics(body.leg[0]);
         for(int i = 0;i < 3;i++)
         {
-            // body.leg[0].joint_data[i].pos_tar = 0.0;
+            body.leg[0].joint_data[i].pos_tar = 0.0;
             body.leg[0].joint_data[i].vel_tar = 0.0;
             body.leg[0].joint_data[i].tor_tar = 0.0;
-            body.leg[0].joint_data[i].kp = 1.6;
-            body.leg[0].joint_data[i].kd = 0.08;
+            body.leg[0].joint_data[i].kp = 2.5;
+            body.leg[0].joint_data[i].kd = 0.02;
         }
     }
 
-    void JumpController::SetLandingForce(controller::body_data& body,controller::user_data& user)
+    void JumpController::SetLandingForce(controller::body_data& body)
     {
-        last_stance_time+= 1.0 / ctrl_rate;
-        // set axial force like spring
+        // set axial force
         for(int i = 0;i < body.leg[0].joint_num;i++)
         {
             body.leg[0].endf_tar[i] = - k_spring * (1 - l_0/body.leg[0].len) * body.leg[0].endp[i];
         }
-        // height PI control
-        if(body.leg[0].len > last_len)
-            body.leg[0].endf_tar[2]+= 200.0 * height_err + 20.0 * integer_height_err;
-        last_len = body.leg[0].len;
+        body.leg[0].endf_tar[2]+= 12.0;
+
+        // set radial force
+        double rad_t_x = - k_spring * body.pitch;
+        double rad_t_y = - k_spring * body.roll;
+        double rad_f_x = - rad_t_x * 5000.0 / body.leg[0].len;
+        double rad_f_y = - rad_t_y * 5000.0 / body.leg[0].len;
+
+        body.leg[0].endf_tar[2]-= rad_f_x * body.leg[0].endp[0] / body.leg[0].len;
+        body.leg[0].endf_tar[0]+= rad_f_x * body.leg[0].endp[2] / body.leg[0].len;
+
+        body.leg[0].endf_tar[2]-= rad_f_y * body.leg[0].endp[1] / body.leg[0].len;
+        body.leg[0].endf_tar[1]+= rad_f_y * body.leg[0].endp[2] / body.leg[0].len;
 
         delta.Statics(body.leg[0]);
+
         for(int i = 0;i < body.leg[0].joint_num;i++)
         {
             body.leg[0].joint_data[i].kp = 0.0;
-            body.leg[0].joint_data[i].kd = 0.01;
+            body.leg[0].joint_data[i].kd = 0.02;
         }
     }
 
-    void JumpController::Controller(controller::body_data& body,controller::user_data& user)
+    void JumpController::Controller(controller::body_data& body)
     {
         UpdateParam(body);
-        JudgeState(body,user);
-        if(body.state == stateFlying)
-            SetFlyingAngle(body,user);
-        else
-            SetLandingForce(body,user);
+        // JudgeState(body);
+        // if(body.state == stateFlying)
+        // {
+        //     SetFlyingAngle(body);
+        //     // SetLandingForce(body);
+        // }
+        // else
+        // {
+        //     SetLandingForce(body);
+        // }
+
+        // SetLandingForce(body);
     }
 }
 
@@ -189,7 +185,6 @@ void InitBody(controller::motor_data* joint_data,int joint_num,
 
     body_data.leg = leg;
     body_data.leg_num = leg_num;
-    body_data.state = controller::stateFlying;
     for(int i = 0;i < 3;i++)
     {
         body_data.raw_acc[i] = 0.0;
@@ -198,13 +193,7 @@ void InitBody(controller::motor_data* joint_data,int joint_num,
         body_data.pos[i] = 0.0;
     }
     /* set initial z */
-    body_data.pos[2] = 0.504 + 0.0425;
-}
-
-void InitUser(controller::user_data& user_date){
-    user_date.pos[2] = 0.550;
-    user_date.vel[0] = 0.0;
-    user_date.vel[1] = 0.0;
+    body_data.pos[2] = 0.50;
 }
 
 void motorCallback(const can::motor_data::ConstPtr& motor_msg,controller::motor_data* joint_data)
@@ -247,13 +236,12 @@ void pauseCallback(const std_msgs::String::ConstPtr& pause_msg,int* pause_flag)
 int main(int argc, char **argv)
 {
     /* variables */
-    int countl = 0, loop_hz =500, pause = 1;
+    int countl = 0, loop_hz = 500, pause = 1;
     const int legnum = 1;
     const int jointnum = 3;
     controller::body_data body;
     controller::leg_data leg[legnum];
     controller::motor_data joint[jointnum];
-    controller::user_data user;
 
     /* ros */
     ros::init(argc, argv, "JumpController");
@@ -270,17 +258,12 @@ int main(int argc, char **argv)
     nh.subscribe<std_msgs::String>("pause", 1, boost::bind(&pauseCallback,_1,&pause));
     ros::Rate loop_rate(loop_hz);
 
-    ros::Publisher basepos =
-    nh.advertise<geometry_msgs::Point>("basepos", 1);
-
     /* Init */
-    // parameters refer to mechanism
     InitBody(joint, jointnum, leg, legnum, body, 62.5, 40.0, 110.0, 250.0);
-    InitUser(user);
-    // parameters refer to control
-    controller::JumpController jc(212.0, 3.0, 0.01, 10.0, 0.1, loop_hz);
+    //TODO
+    controller::JumpController jc(212.0, 1.0, 0.05, 1.0, 0.012, loop_hz);
     can::motor_data motor_cmd;
-    geometry_msgs::Point bpos;
+    nn.Init();
 
     /* loop */
     while (ros::ok())
@@ -290,7 +273,7 @@ int main(int argc, char **argv)
             continue;
         else
         {
-            jc.Controller(body,user);
+            jc.Controller(body);
             for(int i = 0;i < jointnum;i++)
             {
                 motor_cmd.id = i + 1;
@@ -299,19 +282,13 @@ int main(int argc, char **argv)
                 motor_cmd.tor_tar = joint[i].tor_tar;
                 motor_cmd.kp = joint[i].kp;
                 motor_cmd.kd = joint[i].kd;
-                motor_pub.publish(motor_cmd);
+                // motor_pub.publish(motor_cmd);
             }
-
-            bpos.x = body.leg[0].endp_wd[0];
-            bpos.y = body.leg[0].endp_wd[1];
-            bpos.z = body.leg[0].endp_wd[2];
-            basepos.publish(bpos);
-
             countl++;
             if(countl == loop_hz)
             {
                 countl = 0;
-                // ROS_INFO("One Loop");
+                ROS_INFO("One Loop");
             }
         }
         loop_rate.sleep();

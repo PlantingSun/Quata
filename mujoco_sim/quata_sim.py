@@ -9,14 +9,11 @@ from std_msgs.msg import String
 from geometry_msgs.msg import Pose,Twist,Quaternion
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3Stamped
+from geometry_msgs.msg import Point
 from mujoco_sim.msg import motor_data
 import threading
 
-
 class QuataSim(MuJoCoBase):
-	motor_cmd = [motor_data() for _ in range(4)]	#store motor_cmd
-	map_id_to_motor = [0, "A", "B", "C"]
-
 	def __init__(self, xml_path):
 		super().__init__(xml_path)
 		self.simend = 1000.0
@@ -30,6 +27,9 @@ class QuataSim(MuJoCoBase):
 		self.pubMotor = rospy.Publisher('/cybergear_msgs', motor_data, queue_size=6)
 		rospy.Subscriber("/cybergear_cmds", motor_data, self.run_motor_callback, queue_size=10)
 		self.pubPause = rospy.Publisher('/pause', String, queue_size=1)
+		# for test
+		self.pubheigh = rospy.Publisher('/realpos', Point, queue_size=1)
+		self.realpos = Point()
 		# * show the model
 		mj.mj_step(self.model, self.data)
 		# enable contact force visualization
@@ -48,14 +48,7 @@ class QuataSim(MuJoCoBase):
 		self.bodyImu = Imu()
 		self.bodydv = Vector3Stamped()
 		self.bodyMotor = [motor_data(), motor_data(), motor_data()]
-		for i in range(1,4):
-			self.motor_cmd[i].pos_tar = 0.0
-			self.motor_cmd[i].vel_tar = 0.0
-			self.motor_cmd[i].tor_tar = 0.0
-			self.motor_cmd[i].kp = 2.5
-			self.motor_cmd[i].kd = 0.1
-		self.rate = 0
-
+		self.motor_cmd = [motor_data(), motor_data(), motor_data()]
 	
 	def run_motor_callback(self, msg):
 		'''subscribe motor command data and apply it to the model
@@ -63,7 +56,7 @@ class QuataSim(MuJoCoBase):
      	'''
 		# print("Python heard")
 		id = msg.id
-		self.motor_cmd[id] = msg
+		self.motor_cmd[id - 1] = msg
 
 	def get_sensor_data_and_publish(self):
 		'''Get Imu data and Motor data, 
@@ -98,29 +91,33 @@ class QuataSim(MuJoCoBase):
 		self.bodyMotor[0].id = 1
 		self.bodyMotor[0].pos = self.data.sensor('JointAPos').data.copy()
 		self.bodyMotor[0].vel = self.data.sensor('JointAVel').data.copy()
-		self.bodyMotor[0].tor = self.motor_cmd[1].tor_tar
+		self.bodyMotor[0].tor = self.data.ctrl[0]
 		self.bodyMotor[1].id = 2
 		self.bodyMotor[1].pos = self.data.sensor('JointBPos').data.copy()
 		self.bodyMotor[1].vel = self.data.sensor('JointBVel').data.copy()
-		self.bodyMotor[1].tor = self.motor_cmd[2].tor_tar
+		self.bodyMotor[1].tor = self.data.ctrl[1]
 		self.bodyMotor[2].id = 3
 		self.bodyMotor[2].pos = self.data.sensor('JointCPos').data.copy()
 		self.bodyMotor[2].vel = self.data.sensor('JointCVel').data.copy()
-		self.bodyMotor[2].tor = self.motor_cmd[3].tor_tar
+		self.bodyMotor[2].tor = self.data.ctrl[2]
 		self.pubMotor.publish(self.bodyMotor[0])
 		self.pubMotor.publish(self.bodyMotor[1])
 		self.pubMotor.publish(self.bodyMotor[2])
 
 		# publish Pause data
-		self.pubPause.publish('0')		
+		self.pubPause.publish('0')
+
+		# for test
+		self.realpos.z = 0.329 + self.data.qpos[0]
+		self.pubheigh.publish(self.realpos)
 
 	def apply_force(self):
-		for i in range(1, 4):
+		for i in range(0, 3):
 			msg = self.motor_cmd[i]
-			self.data.ctrl[i - 1] = msg.tor_tar +\
-			msg.kp*(msg.pos_tar - self.bodyMotor[i - 1].pos) +\
-			msg.kd*(msg.vel_tar - self.bodyMotor[i - 1].vel)
-	
+			self.data.ctrl[i] = msg.tor_tar +\
+			msg.kp*(msg.pos_tar - self.bodyMotor[i].pos) +\
+			msg.kd*(msg.vel_tar - self.bodyMotor[i].vel)	
+
 	def reset(self):
 		# Set camera configuration
 		self.cam.azimuth = 60
@@ -128,11 +125,11 @@ class QuataSim(MuJoCoBase):
 		self.cam.distance = 1.5
 		self.cam.lookat = np.array([0.0, 0.0, 0.5])
 		#init motor_cmd 
-		for i in range(1,4):
+		for i in range(0,3):
 			self.motor_cmd[i].pos_tar = 0.0
 			self.motor_cmd[i].vel_tar = 0.0
 			self.motor_cmd[i].tor_tar = 0.0
-			self.motor_cmd[i].kp = 2.5
+			self.motor_cmd[i].kp = 10.0
 			self.motor_cmd[i].kd = 0.1
  
 	def simulate(self):
@@ -143,31 +140,19 @@ class QuataSim(MuJoCoBase):
 				self.pubPause.publish('1')
 
 			while (self.data.time - simstart <= 1.0/60.0 and not self.pause_flag):
-				# get current absolute time 
-				now = glfw.get_time()
-
 				# Publish joint positions and velocities
 				self.get_sensor_data_and_publish()
-
-				#apply force to motor
+				# Step simulation environment and apply force to motor
+				mj.mj_step1(self.model, self.data)
 				self.apply_force()
-
-				# Step simulation environment
-				mj.mj_step(self.model, self.data)
-
-				self.rate = self.rate+1
-
-				# print("ground force:", self.data.sensor('touchSensor').data.copy())
-		
-				# sleep until 1ms don't use rospy.Rate
-				while (glfw.get_time() - now) < 0.00099:
-					pass
+				mj.mj_step2(self.model, self.data)
 			
 			if self.data.time >= self.simend:
 				break
 
-			# print(self.rate)
-			self.rate = 0
+			# print(0.329 + self.data.qpos[0])
+			# print(self.data.qvel[6])
+			# print(self.data.sensor('touchSensor').data)
 
 			# get framebuffer viewport
 			viewport_width, viewport_height = glfw.get_framebuffer_size(
@@ -195,8 +180,8 @@ def main():
 	# get xml path
 	rospack = rospkg.RosPack()
 	rospack.list()
-	hector_desc_path = rospack.get_path('quata_description')
-	xml_path = hector_desc_path + "/mjcf/quata.xml"
+	quata_desc_path = rospack.get_path('quata_description')
+	xml_path = quata_desc_path + "/mjcf/quata.xml"
 	sim = QuataSim(xml_path)
 	sim.reset()
 	sim.simulate()

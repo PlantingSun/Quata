@@ -18,7 +18,6 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## Generate messages in the 'msg' folder
 add_message_files(
-        DIRECTORY msg
         FILES
         motor_data.msg
 )
@@ -41,6 +40,7 @@ catkin_package(
         message_runtime
 )
 
+# add_dependencies(${PROJECT_NAME}_user_msg_pub ${PROJECT_NAME}_generate_messages_cpp)
 
 ###########
 ## Build ##
@@ -59,7 +59,12 @@ add_library(
 add_executable(
         WholeBodyDriver
         src/WholeBodyDriver.cpp
-) 
+)
+
+add_dependencies(
+        WholeBodyDriver
+        ${PROJECT_NAME}_generate_messages_cpp
+)
 
 target_link_libraries(
         WholeBodyDriver

@@ -1,13 +1,15 @@
 <mujoco model="quata">
-  <option gravity="0 0 -9.81"/>
+  <!-- <option gravity="0 0 -9.81"/> -->
   <!-- <option  -->
   <compiler angle="radian" meshdir="../meshes/" />
   <statistic meansize="0.03" extent="0.465147" center="-0.0174153 1.79806e-11 -0.0268814"/>
-  <option timestep="0.001" integrator="RK4"/>
+  <option timestep="0.001" integrator="Euler"/>
   <!-- <option timestep="0.00099"/> -->
   <asset>
     <mesh name="base_link" file="base_link.STL"/>
-    <mesh name="End" file="End.STL"/>
+    <!-- <mesh name="End" file="End.STL"/> -->
+    <mesh name="foot" file="foot.STL"/>
+    <mesh name="End" file="FootEnd.STL"/>
 
     <!--     
     upperLeg大腿
@@ -33,34 +35,45 @@
     <mesh name="lowerLegC2" file="lowerLegC2.STL"/>
     <mesh name="lowerHukeC" file="lowerHukeC.STL"/>
     
-    <texture name="grid" type="2d" builtin="checker" rgb1=".1 .2 .3" rgb2=".2 .3 .4" width="300" height="300"/>
+    <texture name="grid" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="300" height="300"/>
     <material name="grid" texture="grid" texrepeat="8 8" reflectance=".1"/>
   </asset>
 
   <default>
     <!--contype自身碰撞类型 conaffinity判断和别人碰撞，自己兼容的碰撞类型 二进制有交集才碰-->
-    <geom contype="1" conaffinity="0" />  
+    <geom contype="0" conaffinity="0" />  
   </default> 
 
   <worldbody>
     <light name="top" pos="0 0 10" castshadow="false" />
-    <geom name="floor" size="10 10 .01" type="plane" pos="0 0 0" material="grid" contype="1" conaffinity="1" />
+    <geom name="floor" size="10 10 .01" type="plane" pos="0 0 0" material="grid" contype="1" conaffinity="1" condim="3"/>
     <!-- <body name="box" pos="-0.2 -0.2 0.2">
       <geom mass="10" type="box" size="0.05 0.05 0.05"  rgba="0.2 0.2 0.2 1" contype="1" conaffinity="1" />
       <freejoint/>
     </body> -->
-    
-    <body name="base" pos = "0 0 0.212">
-      <!--freejoint用来控制baselink是不是浮动的-->
+
+    <body name="foot" pos="0 0 0.329" quat="0.612 0.612 0.354 0.354">
       <freejoint />
-      <site name="Imu" size=".01" pos="0 0 0"/>
-      <!-- <joint name="baseslidez" pos="0 0 0" axis="0 0 1" type="slide"/> -->
+      <!-- <joint name="footslidey" pos="0 0 0" axis="0 1 0" type="slide"/> -->
+      <site name="EndSite" size=".01" pos="0 -0.029 0"/>
+      <inertial pos="0.0 0.002507 0.0" quat="0 0 0 1" mass="0.03" diaginertia="1.1049e-05 1.9816e-05 1.1049e-05"/>
+      <geom type="mesh" rgba="1 0.3882 0.2784 1" mesh="foot"/>
+      <body name="End" pos="0 -0.011 0" quat="0 0 0 1">
+        <inertial pos="0 0.006601 0" quat="0 0 0 1" mass="0.013" diaginertia="1.075e-06 1.619e-06 1.075e-06"/>
+        <geom type="mesh" rgba="1 1 1 1" mesh="End" contype="1" conaffinity="0" solref="-50000 -0.001"/>
+      </body>
+    </body>
+
+    <body name="base" pos = "0 0 0.504">
+      <!--freejoint用来控制baselink是不是浮动的-->
+      <!-- <freejoint /> -->
+      <joint name="baseslidez" pos="0 0 0" axis="0 0 1" type="slide"/>
       <!-- <joint name="baseslidex" pos="0 0 0" axis="1 0 0" type="slide"/> -->
       <!-- <joint name="basehingey" pos="0 0 0" axis="0 1 0" type="hinge"/> -->
       <!-- <joint name="baseslidey" pos="0 0 0" axis="0 1 0" type="slide"/> -->
-
+      <site name="Imu" size=".01" pos="0 0 0"/>
       <inertial pos="0 0 0.042512" quat="0 0 0 1" mass="1.0" diaginertia="2.7582e-03 2.7582e-03 4.6608e-03"/>
-      <geom type="mesh" contype="1" conaffinity="0" rgba="1 1 1 1" mesh="base_link"/>
+      <geom type="mesh" rgba="1 1 1 1" mesh="base_link" contype="1" conaffinity="0"/>
       <body name="upperLegA" pos="-0.0625 0 0.0425" quat="0 0 -0.707107 0.707107">
         <inertial pos="0.045958 0 0" quat="0 0 0 1" mass="0.034" diaginertia="1.884e-06 5.2367e-05 5.3574e-05"/>
         <joint name="JointupperLegA" pos="0 0 0" axis="0 0 1" damping="0.01" range="-1.35 1.35"/>
@@ -77,12 +90,6 @@
               <inertial pos="0 -0.0035 -0.016" quat="0 0 0 1" mass="0.004" diaginertia="8.43e-07 8.45e-07 3.4e-08"/>
               <joint name="JointlowerHukeA" pos="0 0 0" axis="0 -1 0"/>
               <geom type="mesh" rgba="0.2745 0.5098 0.7059 1" mesh="lowerHukeA"/>
-              <body name="End" pos="0 -0.0035 -0.006" quat="0.757461 0.242385 -0.437322 0.419823">
-                <inertial pos="0.0113397 -0.0055 -0.039641" quat="0 0 0 1" mass="0.043" diaginertia="1.5809e-05 2.1146e-05 1.5809e-05"/>
-                <joint name="End" pos="0 0 0" axis="0.866027 0 0.499998"/>
-                <geom type="mesh" contype="1" conaffinity="0" condim="6" friction="1 0.005 0.0001" rgba="1 0.3882 0.2784 1" mesh="End" solref="-8000 -1"/>
-                <!-- <site name="EndSite" size=".03" pos="0.0113397 -0.0055 -0.039641"/> -->
-              </body>
             </body>
           </body>
           <body name="lowerLegA2" pos="0 0 -0.016" quat="0.621881 0.336547 -0.336547 0.621881">
@@ -132,7 +139,7 @@
             <body name="lowerHukeC" pos="-0.0019143 -0.25 0.0029301" quat="0.336548 -0.621879 -0.621881 0.33655">
               <inertial pos="0 0.0035 -0.016" quat="0 0 0 1" mass="0.004" diaginertia="8.43e-07 8.45e-07 3.4e-08"/>
               <joint name="JointlowerHukeC" pos="0 0 0" axis="0 1 0"/>
-              <geom name="End" type="mesh" rgba="0.2745 0.5098 0.7059 1" mesh="lowerHukeC"/>
+              <geom type="mesh" rgba="0.2745 0.5098 0.7059 1" mesh="lowerHukeC"/>
             </body>
           </body>
           <body name="lowerLegC2" pos="0 0 0.016" quat="0.336547 0.621881 0.621881 -0.336547">
@@ -152,10 +159,12 @@
     <connect name="cn32242_2"  body1="lowerHukeB" body2="lowerLegB2" anchor="0 -0.007 0.032" solref="-500000 -10"/>
     <connect name="cn33243_1"  body1="lowerHukeC" body2="lowerLegC2" anchor="0 0 -0.032" solref="-500000 -10"/>
     <connect name="cn33243_2"  body1="lowerHukeC" body2="lowerLegC2" anchor="0 0.007 -0.032" solref="-500000 -10"/>
-    <connect name="cn42End_1"  body1="lowerHukeB" body2="End" anchor="0 -0.0035 0.008" solref="-500000 -10"/>
-    <connect name="cn42End_2"  body1="lowerHukeB" body2="End" anchor="0 -0.0035 0.024" solref="-500000 -10"/>
-    <connect name="cn43End_1"  body1="lowerHukeC" body2="End" anchor="0 0.0035 -0.008" solref="-500000 -10"/>
-    <connect name="cn43End_2"  body1="lowerHukeC" body2="End" anchor="0 0.0035 -0.024" solref="-500000 -10"/>
+    <connect name="cn41foot_1"  body1="lowerHukeA" body2="foot" anchor="0 -0.0035 -0.008" solref="-500000 -10"/>
+    <connect name="cn41foot_2"  body1="lowerHukeA" body2="foot" anchor="0 -0.0035 -0.024" solref="-500000 -10"/>
+    <connect name="cn42foot_1"  body1="lowerHukeB" body2="foot" anchor="0 -0.0035 0.008" solref="-500000 -10"/>
+    <connect name="cn42foot_2"  body1="lowerHukeB" body2="foot" anchor="0 -0.0035 0.024" solref="-500000 -10"/>
+    <connect name="cn43foot_1"  body1="lowerHukeC" body2="foot" anchor="0 0.0035 -0.008" solref="-500000 -10"/>
+    <connect name="cn43foot_2"  body1="lowerHukeC" body2="foot" anchor="0 0.0035 -0.024" solref="-500000 -10"/>
   </equality>
 
   <actuator>
@@ -192,12 +201,12 @@
     <actuatorfrc name="JointCTor" actuator="JointC_motor" noise="0"/> 
     
     <!-- touch -->
-    <!-- <touch name="touchSensor" site="EndSite"/> -->
+    <touch name="touchSensor" site="EndSite"/>
 
   </sensor>
 
   <!-- <contact>
-    <pair name="contact_floor_end" geom1="End" geom2="floor" condim="3" friction="1000 1000 0.5 0.1 0.1"/>
+    <pair name="contact_floor_end" geom1="floor" geom2="End" condim="6" friction="100000 100000 0.005 0.0001 0.0001"/>
   </contact> -->
 
 </mujoco>
