@@ -24,6 +24,23 @@ namespace controller{
         arr_out[2] = arr_front[0] * arr_back[1] - arr_front[1] * arr_back[0];
     }
 
+    double Delta::Norm3(double* arr)
+    {
+        return sqrt(arr[0]*arr[0] + arr[1]*arr[1] + arr[2]*arr[2]);
+    }
+
+    void Delta::Norm3d(double* arr,double (*arr_d)[3],double len,double* len_d)
+    {
+        for(int i = 0;i < 3;i++)
+        {
+            len_d[i] = 0.0;
+            for(int j = 0;j < 3;j++)
+                len_d[i]+= arr[j] * arr_d[j][i];
+            len_d[i]/= len;
+        }
+    }
+
+    /* public */
     void Delta::InverseMatrix33(double (*mat_in)[3],double (*mat_out)[3])
     {
         double tempdet = 0.0,tempadj;
@@ -45,26 +62,8 @@ namespace controller{
                 - mat_in[tempj1][tempi2] * mat_in[tempj2][tempi1];
                 mat_out[i][j] = tempadj / tempdet;
             }
-        
     }
-
-    double Delta::Norm3(double* arr)
-    {
-        return sqrt(arr[0]*arr[0] + arr[1]*arr[1] + arr[2]*arr[2]);
-    }
-
-    void Delta::Norm3d(double* arr,double (*arr_d)[3],double len,double* len_d)
-    {
-        for(int i = 0;i < 3;i++)
-        {
-            len_d[i] = 0.0;
-            for(int j = 0;j < 3;j++)
-                len_d[i]+= arr[j] * arr_d[j][i];
-            len_d[i]/= len;
-        }
-    }
-
-    /* public */
+    
     void Delta::InverseKinematics(struct leg_data& leg)
     {
         double tempm,tempA,tempB,tempC,tempD,tempE,tempxy;

@@ -17,6 +17,11 @@ class QuataSim(MuJoCoBase):
 	def __init__(self, xml_path):
 		super().__init__(xml_path)
 		self.simend = 1000.0
+		
+		# init joint pos
+		# self.data.qpos[7] = 0.3
+		# self.data.qpos[12] = 0.3
+		# self.data.qpos[17] = 0.3
 
 		totalMass = sum(self.model.body_mass)
 		print('Total mass: ', totalMass)
@@ -140,17 +145,21 @@ class QuataSim(MuJoCoBase):
 				self.pubPause.publish('1')
 
 			while (self.data.time - simstart <= 1.0/60.0 and not self.pause_flag):
+				now = glfw.get_time()
 				# Publish joint positions and velocities
 				self.get_sensor_data_and_publish()
 				# Step simulation environment and apply force to motor
 				mj.mj_step1(self.model, self.data)
 				self.apply_force()
 				mj.mj_step2(self.model, self.data)
+				# while (glfw.get_time() - now) < 0.009:
+				# 	pass
 			
 			if self.data.time >= self.simend:
 				break
 
 			# print(0.329 + self.data.qpos[0])
+			# print(self.data.qpos)
 			# print(self.data.qvel[6])
 			# print(self.data.sensor('touchSensor').data)
 

@@ -47,10 +47,10 @@ namespace controller
         /* forward kinemtatics, calculate endp, endv, endf and Jacob */
         delta.CalJacob(body.leg[0]);
         delta.ForwardKinematicsVF(body.leg[0]);
-
         /* IMU for Body */
         QuattoRotMat(body.orient,body.rot_mat);
         QuattoEuler(body.orient,body.roll,body.pitch,body.yaw);
+        delta.InverseMatrix33(body.rot_mat,body.rerot_mat);
         /* acc, dv and pos */
         for(int i = 0;i < 3;i++)
         {
@@ -71,10 +71,9 @@ namespace controller
         for(int i = 0;i < 3;i++)
         {
             body.leg[0].endp_wd[i] = 0.0;
-            for(int j = 0;j < 3;j++)
-            {
-                body.leg[0].endp_wd[i]-= body.rot_mat[i][j] * body.leg[0].endp[j] / 1000.0;
-            }
+            body.leg[0].endp_wd[i]-= body.rot_mat[i][0] * body.leg[0].endp[0] / 1000.0;
+            body.leg[0].endp_wd[i]+= body.rot_mat[i][1] * body.leg[0].endp[1] / 1000.0;
+            body.leg[0].endp_wd[i]-= body.rot_mat[i][2] * body.leg[0].endp[2] / 1000.0;
             body.leg[0].endp_wd[i]+= body.pos[i];
         }
         body.leg[0].endp_wd[2]-= body.rot_mat[2][2] * 0.0345;
@@ -84,14 +83,15 @@ namespace controller
     {
         if(body.state == stateFlying)
         {
-            if(body.leg[0].len < l_0 * 0.95)
+            if(body.leg[0].len < l_0 * 0.96)
             {
                 last_len = body.leg[0].len;
                 height_err = user.pos[2] - state_height;
                 integer_height_err+= height_err;
-                ROS_INFO(" hop height:%lf",state_height);
-                ROS_INFO("integer_err:%lf",integer_height_err);
+                ROS_INFO("  hop height:%lf",state_height);
+                ROS_INFO(" integer_err:%lf",integer_height_err);
                 state_height = 0;
+                ROS_INFO("    body vel:%lf",body.vel[0]);
                 ROS_INFO("stateLanding");
                 body.state = stateLanding;
             }
@@ -100,14 +100,17 @@ namespace controller
         {
             if(body.leg[0].len >= l_0)
             {
-                ROS_INFO("stance time:%lf",last_stance_time);
+                ROS_INFO(" stance time:%lf",last_stance_time);
                 last_stance_time = 0;
-                ROS_INFO("stateFlying");
+                ROS_INFO("  max torque:%lf",max_torque);
+                max_torque = 0;
+                ROS_INFO(" stateFlying");
                 body.state = stateFlying;
                 
-                // body.pos[2] = 0.0;
-                // for(int j = 0;j < 3;j++)
-                //     body.pos[2]+= body.rot_mat[2][j] * body.leg[0].endp[j] / 1000.0;
+                body.pos[2] = 0.0;
+                body.pos[2]+= body.rot_mat[2][0] * body.leg[0].endp[0] / 1000.0;
+                body.pos[2]-= body.rot_mat[2][1] * body.leg[0].endp[1] / 1000.0;
+                body.pos[2]+= body.rot_mat[2][2] * body.leg[0].endp[2] / 1000.0;
             }
         }
     }
@@ -115,17 +118,26 @@ namespace controller
     void JumpController::SetFlyingAngle(controller::body_data& body,controller::user_data& user)
     {
         // forward velocity - flight position
-        body.leg[0].endp_tar[0] = 0.0;
-        body.leg[0].endp_tar[1] = 0.0;
-        body.leg[0].endp_tar[2] = l_0;
+        pe_wd[0] = 1000.0 * (body.vel[0] * last_stance_time / 2.0 - base_vel_kp * (user.vel[0] - body.vel[0]));
+        pe_wd[1] = 1000.0 * (body.vel[1] * last_stance_time / 2.0 - base_vel_kp * (user.vel[1] - body.vel[1]));
+        pe_wd[2] = -sqrt(l_0 * l_0 - pe_wd[0] * pe_wd[0] - pe_wd[1] * pe_wd[1]);
+        // end position
+        for(int i = 0;i < 3;i++)
+        {
+            body.leg[0].endp_tar[i] = 0.0;
+            body.leg[0].endp_tar[i]-= body.rerot_mat[i][0] * pe_wd[0];
+            body.leg[0].endp_tar[i]+= body.rerot_mat[i][1] * pe_wd[1];
+            body.leg[0].endp_tar[i]-= body.rerot_mat[i][2] * pe_wd[2];
+        }
+    
         delta.InverseKinematics(body.leg[0]);
         for(int i = 0;i < 3;i++)
         {
             // body.leg[0].joint_data[i].pos_tar = 0.0;
             body.leg[0].joint_data[i].vel_tar = 0.0;
             body.leg[0].joint_data[i].tor_tar = 0.0;
-            body.leg[0].joint_data[i].kp = 1.6;
-            body.leg[0].joint_data[i].kd = 0.08;
+            body.leg[0].joint_data[i].kp = joint_kp;
+            body.leg[0].joint_data[i].kd = joint_kd;
         }
     }
 
@@ -137,16 +149,39 @@ namespace controller
         {
             body.leg[0].endf_tar[i] = - k_spring * (1 - l_0/body.leg[0].len) * body.leg[0].endp[i];
         }
+        // base attitude control
+        // fe_wd[0] = - base_att_kp * body.pitch - base_att_kd * body.ang_vel[1];
+        // fe_wd[1] = 0.0;
+        // fe_wd[1] = base_att_kp * body.roll + base_att_kd * body.ang_vel[0];
         // height PI control
         if(body.leg[0].len > last_len)
-            body.leg[0].endf_tar[2]+= 200.0 * height_err + 20.0 * integer_height_err;
+        {
+            // fe_wd[0] = - base_att_kp * body.pitch - base_att_kd * body.ang_vel[1];
+            // fe_wd[1] = 0.0;
+            fe_wd[2] = -(base_hei_kp * height_err + base_hei_kd * integer_height_err);
+            // if(fabs(fe_wd[0]) > 0.2 * fabs(fe_wd[2]))
+            // {
+            //     if(fe_wd[0] > 0.0)
+            //         fe_wd[0] = 0.2 * fabs(fe_wd[2]);
+            //     else
+            //         fe_wd[0] = -0.2 * fabs(fe_wd[2]);
+            // }
+        }
         last_len = body.leg[0].len;
+        for(int i = 0;i < 3;i++)
+        {
+            body.leg[0].endf_tar[i]-= body.rerot_mat[i][0] * fe_wd[0];
+            body.leg[0].endf_tar[i]+= body.rerot_mat[i][1] * fe_wd[1];
+            body.leg[0].endf_tar[i]-= body.rerot_mat[i][2] * fe_wd[2];
+        }
 
         delta.Statics(body.leg[0]);
         for(int i = 0;i < body.leg[0].joint_num;i++)
         {
+            if(max_torque < body.leg[0].joint_data[i].tor_tar)
+                max_torque = body.leg[0].joint_data[i].tor_tar;
             body.leg[0].joint_data[i].kp = 0.0;
-            body.leg[0].joint_data[i].kd = 0.01;
+            body.leg[0].joint_data[i].kd = 0.001;
         }
     }
 
@@ -160,7 +195,6 @@ namespace controller
             SetLandingForce(body,user);
     }
 }
-
 
 /* for node */
 void InitBody(controller::motor_data* joint_data,int joint_num,
@@ -198,11 +232,11 @@ void InitBody(controller::motor_data* joint_data,int joint_num,
         body_data.pos[i] = 0.0;
     }
     /* set initial z */
-    body_data.pos[2] = 0.504 + 0.0425;
+    body_data.pos[2] = 0.4465;
 }
 
 void InitUser(controller::user_data& user_date){
-    user_date.pos[2] = 0.550;
+    user_date.pos[2] = 0.400;
     user_date.vel[0] = 0.0;
     user_date.vel[1] = 0.0;
 }
@@ -247,7 +281,8 @@ void pauseCallback(const std_msgs::String::ConstPtr& pause_msg,int* pause_flag)
 int main(int argc, char **argv)
 {
     /* variables */
-    int countl = 0, loop_hz =500, pause = 1;
+    int countl = 0, countsum = 0;
+    int loop_hz = 500, pause = 1;
     const int legnum = 1;
     const int jointnum = 3;
     controller::body_data body;
@@ -278,14 +313,16 @@ int main(int argc, char **argv)
     InitBody(joint, jointnum, leg, legnum, body, 62.5, 40.0, 110.0, 250.0);
     InitUser(user);
     // parameters refer to control
-    controller::JumpController jc(212.0, 3.0, 0.01, 10.0, 0.1, loop_hz);
+    controller::JumpController jc(240.0, 1.0, 0.01, 
+                                  0.01, 120.0, 80.0, 0.0, 0.0,
+                                  2.5, 0.1, loop_hz);
     can::motor_data motor_cmd;
     geometry_msgs::Point bpos;
 
     /* loop */
     while (ros::ok())
     {
-        ros::spinOnce();
+        ros::spinOnce();   
         if(pause)
             continue;
         else
@@ -308,10 +345,15 @@ int main(int argc, char **argv)
             basepos.publish(bpos);
 
             countl++;
+            countsum++;
             if(countl == loop_hz)
             {
                 countl = 0;
                 // ROS_INFO("One Loop");
+            }
+            if(countsum > 3 * loop_hz)
+            {
+                user.vel[0] = 0.1;
             }
         }
         loop_rate.sleep();

@@ -1,5 +1,5 @@
 <mujoco model="quata">
-  <!-- <option gravity="0 0 -9.81"/> -->
+  <option gravity="0 0 -9.81"/>
   <!-- <option  -->
   <compiler angle="radian" meshdir="../meshes/" />
   <statistic meansize="0.03" extent="0.465147" center="-0.0174153 1.79806e-11 -0.0268814"/>
@@ -41,18 +41,18 @@
 
   <default>
     <!--contype自身碰撞类型 conaffinity判断和别人碰撞，自己兼容的碰撞类型 二进制有交集才碰-->
-    <geom contype="0" conaffinity="0" />  
+    <geom contype="0" conaffinity="0" condim="3" friction="1.2 0.005 0.0001"/>  
   </default> 
 
   <worldbody>
     <light name="top" pos="0 0 10" castshadow="false" />
-    <geom name="floor" size="10 10 .01" type="plane" pos="0 0 0" material="grid" contype="1" conaffinity="1" condim="3"/>
+    <geom name="floor" size="10 10 .01" type="plane" pos="0 0 0" material="grid" contype="1" conaffinity="1"/>
     <!-- <body name="box" pos="-0.2 -0.2 0.2">
       <geom mass="10" type="box" size="0.05 0.05 0.05"  rgba="0.2 0.2 0.2 1" contype="1" conaffinity="1" />
       <freejoint/>
     </body> -->
 
-    <body name="foot" pos="0 0 0.329" quat="0.612 0.612 0.354 0.354">
+    <body name="foot" pos="0 0 0.229" quat="0.612 0.612 0.354 0.354">
       <freejoint />
       <!-- <joint name="footslidey" pos="0 0 0" axis="0 1 0" type="slide"/> -->
       <site name="EndSite" size=".01" pos="0 -0.029 0"/>
@@ -60,16 +60,18 @@
       <geom type="mesh" rgba="1 0.3882 0.2784 1" mesh="foot"/>
       <body name="End" pos="0 -0.011 0" quat="0 0 0 1">
         <inertial pos="0 0.006601 0" quat="0 0 0 1" mass="0.013" diaginertia="1.075e-06 1.619e-06 1.075e-06"/>
-        <geom type="mesh" rgba="1 1 1 1" mesh="End" contype="1" conaffinity="0" solref="-50000 -0.001"/>
+        <geom type="mesh" rgba="1 1 1 1" mesh="End" contype="1" conaffinity="0" solref="-100000 -0.01"/>
       </body>
     </body>
 
-    <body name="base" pos = "0 0 0.504">
+    <body name="base" pos = "0 0 0.404">
       <!--freejoint用来控制baselink是不是浮动的-->
       <!-- <freejoint /> -->
       <joint name="baseslidez" pos="0 0 0" axis="0 0 1" type="slide"/>
-      <!-- <joint name="baseslidex" pos="0 0 0" axis="1 0 0" type="slide"/> -->
+      <joint name="baseslidex" pos="0 0 0" axis="1 0 0" type="slide"/>
       <!-- <joint name="basehingey" pos="0 0 0" axis="0 1 0" type="hinge"/> -->
+      <!-- <joint name="baseslidey" pos="0 0 0" axis="0 1 0" type="slide"/> -->
+      <!-- <joint name="basehingex" pos="0 0 0" axis="1 0 0" type="hinge"/> -->
       <!-- <joint name="baseslidey" pos="0 0 0" axis="0 1 0" type="slide"/> -->
       <site name="Imu" size=".01" pos="0 0 0"/>
       <inertial pos="0 0 0.042512" quat="0 0 0 1" mass="1.0" diaginertia="2.7582e-03 2.7582e-03 4.6608e-03"/>
@@ -174,9 +176,9 @@
     <!-- <velocity joint="JointupperLegB" ctrllimited="true" ctrlrange="-1 1" kv="0"/> -->
     <!-- <position name="JointC_pos" joint="JointupperLegC" ctrllimited="true" ctrlrange="-1 1" kp="0"/> -->
     <!-- <velocity joint="JointupperLegC" ctrllimited="true" ctrlrange="-1 1" kv="0"/> -->
-    <motor name="JointA_motor" gear="1" joint="JointupperLegA"/>
-    <motor name="JointB_motor" gear="1" joint="JointupperLegB" />
-    <motor name="JointC_motor" gear="1" joint="JointupperLegC"/>
+    <motor name="JointA_motor" ctrllimited="true" ctrlrange="-12.0 12.0" gear="1" joint="JointupperLegA"/>
+    <motor name="JointB_motor" ctrllimited="true" ctrlrange="-12.0 12.0" gear="1" joint="JointupperLegB" />
+    <motor name="JointC_motor" ctrllimited="true" ctrlrange="-12.0 12.0" gear="1" joint="JointupperLegC"/>
   </actuator>
 
   <sensor>

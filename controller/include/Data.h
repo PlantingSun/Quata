@@ -39,7 +39,7 @@ namespace controller{
 
         body_state state, last_state;
         double raw_ang_vel[3],ang_vel[3];
-        double orient[4],rot_mat[3][3],pitch,roll,yaw;
+        double orient[4],rot_mat[3][3],rerot_mat[3][3],pitch,roll,yaw;
         double pos[3],vel[3],raw_vel[3],acc[3],raw_acc[3];
     };
 
