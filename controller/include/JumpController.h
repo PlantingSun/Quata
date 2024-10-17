@@ -58,6 +58,7 @@ namespace controller{
             double pe_wd[3],base_vel_kp;
             double l_0,k_spring,margin;
             double joint_kp,joint_kd,ctrl_rate;
+            bool first_jump = 0;
 
             controller::Delta delta;
     };

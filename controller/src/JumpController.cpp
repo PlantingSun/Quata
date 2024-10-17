@@ -100,6 +100,8 @@ namespace controller
         {
             if(body.leg[0].len >= l_0)
             {
+                if(!first_jump)
+                    first_jump = 1;
                 ROS_INFO(" stance time:%lf",last_stance_time);
                 last_stance_time = 0;
                 ROS_INFO("  max torque:%lf",max_torque);
@@ -131,7 +133,7 @@ namespace controller
         }
     
         delta.InverseKinematics(body.leg[0]);
-        for(int i = 0;i < 3;i++)
+        for(int i = 0;i < body.leg[0].joint_num;i++)
         {
             // body.leg[0].joint_data[i].pos_tar = 0.0;
             body.leg[0].joint_data[i].vel_tar = 0.0;
@@ -151,14 +153,13 @@ namespace controller
         }
         // base attitude control
         // fe_wd[0] = - base_att_kp * body.pitch - base_att_kd * body.ang_vel[1];
-        // fe_wd[1] = 0.0;
         // fe_wd[1] = base_att_kp * body.roll + base_att_kd * body.ang_vel[0];
         // height PI control
-        if(body.leg[0].len > last_len)
+        if(body.leg[0].len > last_len && first_jump)
         {
             // fe_wd[0] = - base_att_kp * body.pitch - base_att_kd * body.ang_vel[1];
             // fe_wd[1] = 0.0;
-            fe_wd[2] = -(base_hei_kp * height_err + base_hei_kd * integer_height_err);
+            fe_wd[2] = - (base_hei_kp * height_err + base_hei_kd * integer_height_err);
             // if(fabs(fe_wd[0]) > 0.2 * fabs(fe_wd[2]))
             // {
             //     if(fe_wd[0] > 0.0)
@@ -178,7 +179,7 @@ namespace controller
         delta.Statics(body.leg[0]);
         for(int i = 0;i < body.leg[0].joint_num;i++)
         {
-            if(max_torque < body.leg[0].joint_data[i].tor_tar)
+            if(fabs(max_torque) < fabs(body.leg[0].joint_data[i].tor_tar))
                 max_torque = body.leg[0].joint_data[i].tor_tar;
             body.leg[0].joint_data[i].kp = 0.0;
             body.leg[0].joint_data[i].kd = 0.001;
@@ -313,8 +314,8 @@ int main(int argc, char **argv)
     InitBody(joint, jointnum, leg, legnum, body, 62.5, 40.0, 110.0, 250.0);
     InitUser(user);
     // parameters refer to control
-    controller::JumpController jc(240.0, 1.0, 0.01, 
-                                  0.01, 120.0, 80.0, 0.0, 0.0,
+    controller::JumpController jc(225.0, 1.8, 0.01,
+                                  0.01, 90.0, 45.0, 0.0, 0.0,
                                   2.5, 0.1, loop_hz);
     can::motor_data motor_cmd;
     geometry_msgs::Point bpos;
@@ -351,10 +352,10 @@ int main(int argc, char **argv)
                 countl = 0;
                 // ROS_INFO("One Loop");
             }
-            if(countsum > 3 * loop_hz)
-            {
-                user.vel[0] = 0.1;
-            }
+            // if(countsum > 3 * loop_hz)
+            // {
+            //     user.vel[0] = 0.1;
+            // }
         }
         loop_rate.sleep();
     }
