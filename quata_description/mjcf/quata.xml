@@ -78,7 +78,6 @@
       <joint name="basehingey" pos="0 0 0" axis="0 1 0" type="hinge"/>
       <!-- <joint name="baseslidey" pos="0 0 0" axis="0 1 0" type="slide"/> -->
       <!-- <joint name="basehingex" pos="0 0 0" axis="1 0 0" type="hinge"/> -->
-      <!-- <joint name="baseslidey" pos="0 0 0" axis="0 1 0" type="slide"/> -->
       <site name="Imu" size=".01" pos="0 0 0"/>
       <inertial pos="0 0 0.042512" quat="0 0 0 1" mass="1.0" diaginertia="2.7582e-03 2.7582e-03 4.6608e-03"/>
       <geom type="mesh" rgba="1 1 1 1" mesh="base_link" contype="1" conaffinity="0"/>

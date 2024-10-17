@@ -5,8 +5,8 @@ margin: 0.01
 friction: 2.0
 base_vel_kp: 0.002
 base_hei_kp: 180.0
-base_hei_kd: 90.0
-base_att_kp: 15.0
-base_att_kd: 0.001
+base_hei_ki: 90.0
+base_att_kp: 18.0
+base_att_kd: 0.0015
 joint_kp: 2.5
 joint_kd: 0.1

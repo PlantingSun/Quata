@@ -92,7 +92,7 @@ namespace controller
                 ROS_INFO("  hop height:%lf",state_height);
                 // ROS_INFO(" integer_err:%lf",integer_height_err);
                 state_height = 0;
-                ROS_INFO("    body vel:%lf",body.vel[0]);
+                ROS_INFO("body vel:%.2lf %.2lf",body.vel[0],body.vel[1]);
                 ROS_INFO("stateLanding");
                 body.state = stateLanding;
             }
@@ -162,13 +162,12 @@ namespace controller
         // height PI control
         if(body.leg[0].len > last_len && first_jump)
         {
-            fe_wd[2] = - (base_hei_kp * height_err + base_hei_kd * integer_height_err);
-            if(fabs(fe_wd[0]) > friction * fabs(fe_wd[2]))
+            fe_wd[2] = - (base_hei_kp * height_err + base_hei_ki * integer_height_err);
+            fe = sqrt(fe_wd[0] * fe_wd[0] + fe_wd[1] * fe_wd[1]);
+            if(fe > friction * fabs(fe_wd[2]))
             {
-                if(fe_wd[0] > 0.0)
-                    fe_wd[0] = friction * fabs(fe_wd[2]);
-                else
-                    fe_wd[0] = -friction * fabs(fe_wd[2]);
+                fe_wd[0] = fe_wd[0] / fe * friction * fabs(fe_wd[2]);
+                fe_wd[1] = fe_wd[1] / fe * friction * fabs(fe_wd[2]);
             }
         }
         last_len = body.leg[0].len;
@@ -328,7 +327,7 @@ int main(int argc, char **argv)
     yamlConfig["friction"].as<double>(),
     yamlConfig["base_vel_kp"].as<double>(),
     yamlConfig["base_hei_kp"].as<double>(),
-    yamlConfig["base_hei_kd"].as<double>(),
+    yamlConfig["base_hei_ki"].as<double>(),
     yamlConfig["base_att_kp"].as<double>(),
     yamlConfig["base_att_kd"].as<double>(),
     yamlConfig["joint_kp"].as<double>(),

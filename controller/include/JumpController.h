@@ -26,7 +26,7 @@ namespace controller{
     class JumpController{
         public:
             JumpController(double l_0_,double k_spring_,double damp_spring_,double margin_,double friction_,
-                           double base_vel_kp_,double base_hei_kp_,double base_hei_kd_,double base_att_kp_,double base_att_kd_,
+                           double base_vel_kp_,double base_hei_kp_,double base_hei_ki_,double base_att_kp_,double base_att_kd_,
                            double joint_kp_,double joint_kd_,double ctrl_rate_)
             {
                 l_0 = l_0_;
@@ -36,7 +36,7 @@ namespace controller{
                 friction = friction_;
                 base_vel_kp = base_vel_kp_;
                 base_hei_kp = base_hei_kp_;
-                base_hei_kd = base_hei_kd_;
+                base_hei_ki = base_hei_ki_;
                 base_att_kp = base_att_kp_;
                 base_att_kd = base_att_kd_;
                 joint_kp = joint_kp_;
@@ -52,8 +52,8 @@ namespace controller{
             void SetFlyingAngle(controller::body_data& body,controller::user_data& user);
             void SetLandingForce(controller::body_data& body,controller::user_data& user);
             double cmdpos[3],cmdpos_kp[3];
-            double fe_wd[3],state_height,height_err,integer_height_err,max_torque;
-            double base_hei_kp,base_hei_kd;
+            double fe,fe_wd[3],state_height,height_err,integer_height_err,max_torque;
+            double base_hei_kp,base_hei_ki;
             double base_att_kp,base_att_kd,friction;
             double last_len;
             double stance_time,last_stance_time;
