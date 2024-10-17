@@ -149,9 +149,10 @@ namespace controller
     {
         stance_time+= 1.0 / ctrl_rate;
         // set axial force like spring
+        axial_force = - k_spring * (body.leg[0].len - l_0) - damp_spring * body.leg[0].endvel;
         for(int i = 0;i < body.leg[0].joint_num;i++)
         {
-            body.leg[0].endf_tar[i] = -k_spring * (1 - l_0/body.leg[0].len) * body.leg[0].endp[i];
+            body.leg[0].endf_tar[i] = axial_force / body.leg[0].len * body.leg[0].endp[i];
         }
         // base attitude control
         // fe_wd[0] = last_stance_time * (-base_att_kp * body.pitch - base_att_kd * body.ang_vel[1]);
@@ -239,7 +240,7 @@ void InitBody(controller::motor_data* joint_data,int joint_num,
 }
 
 void InitUser(controller::user_data& user_date){
-    user_date.pos[2] = 0.300;
+    user_date.pos[2] = 0.350;
     user_date.vel[0] = 0.0;
     user_date.vel[1] = 0.0;
 }
@@ -322,6 +323,7 @@ int main(int argc, char **argv)
     controller::JumpController jc(
     yamlConfig["l_0"].as<double>(),
     yamlConfig["k_spring"].as<double>(),
+    yamlConfig["damp_spring"].as<double>(),
     yamlConfig["margin"].as<double>(),
     yamlConfig["friction"].as<double>(),
     yamlConfig["base_vel_kp"].as<double>(),

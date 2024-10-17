@@ -154,6 +154,8 @@ namespace controller{
                 leg.endf[i]+= leg.reJacob[j][i] * leg.joint_data[j].tor;
             }
         }
+        leg.endvel = Norm3(leg.endv);
+        leg.endforce = Norm3(leg.endf);
     }
 
     void Delta::CalJacob(struct leg_data& leg)

@@ -3,8 +3,8 @@
   <!-- <option  -->
   <compiler angle="radian" meshdir="../meshes/" />
   <statistic meansize="0.03" extent="0.465147" center="-0.0174153 1.79806e-11 -0.0268814"/>
-  <option timestep="0.001" integrator="Euler"/>
-  <option noslip_iterations="3" noslip_tolerance="1e-8"/>
+  <option timestep="0.0005" integrator="Euler"/>
+  <option noslip_iterations="3" noslip_tolerance="1e-9"/>
   <option>
     <flag multiccd="enable"/>
   </option>
@@ -44,8 +44,8 @@
 
   <default>
     <!--contype自身碰撞类型 conaffinity判断和别人碰撞，自己兼容的碰撞类型 二进制有交集才碰-->
-    <geom contype="0" conaffinity="0" condim="4" friction="1.8 0.05 0.0001"/>  
-  </default> 
+    <geom contype="0" conaffinity="0" condim="6" friction="2.0 0.05 0.0001" solref="-50000 -100"/>  
+  </default>
 
   <worldbody>
     <light name="top" pos="0 0 10" castshadow="false" />
@@ -63,9 +63,9 @@
       <geom type="mesh" rgba="1 0.3882 0.2784 1" mesh="foot"/>
       <body name="End" pos="0 -0.011 0" quat="0 0 0 1">
         <inertial pos="0 0.006601 0" quat="0 0 0 1" mass="0.013" diaginertia="1.075e-06 1.619e-06 1.075e-06"/>
-        <geom type="mesh" rgba="1 1 1 1" mesh="End" contype="1" conaffinity="0" solref="-50000 -1"/>
-        <!-- <geom type="sphere" size="0.018" rgba="1 1 1 1" contype="1" conaffinity="0" solref="-50000 -0.1"/> -->
-        <!-- <geom type="box" size="0.018 0.018 0.018" rgba="1 1 1 1" contype="1" conaffinity="0" solref="-50000 -0.1"/> -->
+        <geom type="mesh" rgba="1 1 1 1" mesh="End" contype="1" conaffinity="0"/>
+        <!-- <geom type="sphere" size="0.018" rgba="1 1 1 1" contype="1" conaffinity="0"/> -->
+        <!-- <geom type="box" size="0.018 0.018 0.018" rgba="1 1 1 1" contype="1" conaffinity="0"/> -->
       </body>
     </body>
 
@@ -161,18 +161,18 @@
   </worldbody>
 
   <equality>   
-    <connect name="cn31241_1"  body1="lowerHukeA" body2="lowerLegA2" anchor="0 0 -0.032" solref="-500000 -10"/>
-    <connect name="cn31241_2"  body1="lowerHukeA" body2="lowerLegA2" anchor="0 -0.007 -0.032" solref="-500000 -10"/>
-    <connect name="cn32242_1"  body1="lowerHukeB" body2="lowerLegB2" anchor="0 0 0.032" solref="-500000 -10"/>
-    <connect name="cn32242_2"  body1="lowerHukeB" body2="lowerLegB2" anchor="0 -0.007 0.032" solref="-500000 -10"/>
-    <connect name="cn33243_1"  body1="lowerHukeC" body2="lowerLegC2" anchor="0 0 -0.032" solref="-500000 -10"/>
-    <connect name="cn33243_2"  body1="lowerHukeC" body2="lowerLegC2" anchor="0 0.007 -0.032" solref="-500000 -10"/>
-    <connect name="cn41foot_1"  body1="lowerHukeA" body2="foot" anchor="0 -0.0035 -0.008" solref="-500000 -10"/>
-    <connect name="cn41foot_2"  body1="lowerHukeA" body2="foot" anchor="0 -0.0035 -0.024" solref="-500000 -10"/>
-    <connect name="cn42foot_1"  body1="lowerHukeB" body2="foot" anchor="0 -0.0035 0.008" solref="-500000 -10"/>
-    <connect name="cn42foot_2"  body1="lowerHukeB" body2="foot" anchor="0 -0.0035 0.024" solref="-500000 -10"/>
-    <connect name="cn43foot_1"  body1="lowerHukeC" body2="foot" anchor="0 0.0035 -0.008" solref="-500000 -10"/>
-    <connect name="cn43foot_2"  body1="lowerHukeC" body2="foot" anchor="0 0.0035 -0.024" solref="-500000 -10"/>
+    <connect name="cn31241_1"  body1="lowerHukeA" body2="lowerLegA2" anchor="0 0 -0.032" solref="-750000 -10"/>
+    <connect name="cn31241_2"  body1="lowerHukeA" body2="lowerLegA2" anchor="0 -0.007 -0.032" solref="-750000 -10"/>
+    <connect name="cn32242_1"  body1="lowerHukeB" body2="lowerLegB2" anchor="0 0 0.032" solref="-750000 -10"/>
+    <connect name="cn32242_2"  body1="lowerHukeB" body2="lowerLegB2" anchor="0 -0.007 0.032" solref="-750000 -10"/>
+    <connect name="cn33243_1"  body1="lowerHukeC" body2="lowerLegC2" anchor="0 0 -0.032" solref="-750000 -10"/>
+    <connect name="cn33243_2"  body1="lowerHukeC" body2="lowerLegC2" anchor="0 0.007 -0.032" solref="-750000 -10"/>
+    <connect name="cn41foot_1"  body1="lowerHukeA" body2="foot" anchor="0 -0.0035 -0.008" solref="-750000 -10"/>
+    <connect name="cn41foot_2"  body1="lowerHukeA" body2="foot" anchor="0 -0.0035 -0.024" solref="-750000 -10"/>
+    <connect name="cn42foot_1"  body1="lowerHukeB" body2="foot" anchor="0 -0.0035 0.008" solref="-750000 -10"/>
+    <connect name="cn42foot_2"  body1="lowerHukeB" body2="foot" anchor="0 -0.0035 0.024" solref="-750000 -10"/>
+    <connect name="cn43foot_1"  body1="lowerHukeC" body2="foot" anchor="0 0.0035 -0.008" solref="-750000 -10"/>
+    <connect name="cn43foot_2"  body1="lowerHukeC" body2="foot" anchor="0 0.0035 -0.024" solref="-750000 -10"/>
   </equality>
 
   <actuator>

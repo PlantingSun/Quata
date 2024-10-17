@@ -25,12 +25,13 @@ namespace controller{
     /* controller */
     class JumpController{
         public:
-            JumpController(double l_0_,double k_spring_,double margin_,double friction_,
+            JumpController(double l_0_,double k_spring_,double damp_spring_,double margin_,double friction_,
                            double base_vel_kp_,double base_hei_kp_,double base_hei_kd_,double base_att_kp_,double base_att_kd_,
                            double joint_kp_,double joint_kd_,double ctrl_rate_)
             {
                 l_0 = l_0_;
                 k_spring = k_spring_;
+                damp_spring = damp_spring_;
                 margin = margin_;
                 friction = friction_;
                 base_vel_kp = base_vel_kp_;
@@ -57,7 +58,7 @@ namespace controller{
             double last_len;
             double stance_time,last_stance_time;
             double pe_wd[3],base_vel_kp;
-            double l_0,k_spring,margin;
+            double l_0,k_spring,damp_spring,axial_force,margin;
             double joint_kp,joint_kd,ctrl_rate;
             bool first_jump = 0;
 

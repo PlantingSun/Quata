@@ -18,7 +18,7 @@ namespace controller{
         int joint_num;
         motor_data* joint_data;
         
-        double len;
+        double len,endvel,endforce;
         double endp[3],endv[3],endf[3],endp_wd[3];
         double endp_tar[3],endv_tar[3],endf_tar[3];
         double biospos[3];
