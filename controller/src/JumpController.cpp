@@ -1,5 +1,6 @@
 #include "JumpController.h"
 #include "can/motor_data.h"
+#include "yaml-cpp/yaml.h"
 
 /* for namespace */
 namespace controller
@@ -89,7 +90,7 @@ namespace controller
                 height_err = user.pos[2] - state_height;
                 integer_height_err+= height_err;
                 ROS_INFO("  hop height:%lf",state_height);
-                ROS_INFO(" integer_err:%lf",integer_height_err);
+                // ROS_INFO(" integer_err:%lf",integer_height_err);
                 state_height = 0;
                 ROS_INFO("    body vel:%lf",body.vel[0]);
                 ROS_INFO("stateLanding");
@@ -102,8 +103,9 @@ namespace controller
             {
                 if(!first_jump)
                     first_jump = 1;
-                ROS_INFO(" stance time:%lf",last_stance_time);
-                last_stance_time = 0;
+                ROS_INFO(" stance time:%lf",stance_time);
+                last_stance_time = stance_time;
+                stance_time = 0;
                 ROS_INFO("  max torque:%lf",max_torque);
                 max_torque = 0;
                 ROS_INFO(" stateFlying");
@@ -145,28 +147,28 @@ namespace controller
 
     void JumpController::SetLandingForce(controller::body_data& body,controller::user_data& user)
     {
-        last_stance_time+= 1.0 / ctrl_rate;
+        stance_time+= 1.0 / ctrl_rate;
         // set axial force like spring
         for(int i = 0;i < body.leg[0].joint_num;i++)
         {
-            body.leg[0].endf_tar[i] = - k_spring * (1 - l_0/body.leg[0].len) * body.leg[0].endp[i];
+            body.leg[0].endf_tar[i] = -k_spring * (1 - l_0/body.leg[0].len) * body.leg[0].endp[i];
         }
         // base attitude control
-        // fe_wd[0] = - base_att_kp * body.pitch - base_att_kd * body.ang_vel[1];
-        // fe_wd[1] = base_att_kp * body.roll + base_att_kd * body.ang_vel[0];
+        // fe_wd[0] = last_stance_time * (-base_att_kp * body.pitch - base_att_kd * body.ang_vel[1]);
+        // fe_wd[1] = last_stance_time * (base_att_kp * body.roll + base_att_kd * body.ang_vel[0]);
+        fe_wd[0] = -base_att_kp * body.pitch - base_att_kd * body.ang_vel[1];
+        fe_wd[1] = base_att_kp * body.roll + base_att_kd * body.ang_vel[0];
         // height PI control
         if(body.leg[0].len > last_len && first_jump)
         {
-            // fe_wd[0] = - base_att_kp * body.pitch - base_att_kd * body.ang_vel[1];
-            // fe_wd[1] = 0.0;
             fe_wd[2] = - (base_hei_kp * height_err + base_hei_kd * integer_height_err);
-            // if(fabs(fe_wd[0]) > 0.2 * fabs(fe_wd[2]))
-            // {
-            //     if(fe_wd[0] > 0.0)
-            //         fe_wd[0] = 0.2 * fabs(fe_wd[2]);
-            //     else
-            //         fe_wd[0] = -0.2 * fabs(fe_wd[2]);
-            // }
+            if(fabs(fe_wd[0]) > friction * fabs(fe_wd[2]))
+            {
+                if(fe_wd[0] > 0.0)
+                    fe_wd[0] = friction * fabs(fe_wd[2]);
+                else
+                    fe_wd[0] = -friction * fabs(fe_wd[2]);
+            }
         }
         last_len = body.leg[0].len;
         for(int i = 0;i < 3;i++)
@@ -233,11 +235,11 @@ void InitBody(controller::motor_data* joint_data,int joint_num,
         body_data.pos[i] = 0.0;
     }
     /* set initial z */
-    body_data.pos[2] = 0.4465;
+    body_data.pos[2] = 0.3465;
 }
 
 void InitUser(controller::user_data& user_date){
-    user_date.pos[2] = 0.400;
+    user_date.pos[2] = 0.300;
     user_date.vel[0] = 0.0;
     user_date.vel[1] = 0.0;
 }
@@ -291,6 +293,9 @@ int main(int argc, char **argv)
     controller::motor_data joint[jointnum];
     controller::user_data user;
 
+    std::string param_file = "./src/Quata/controller/src/param.yaml";
+    YAML::Node yamlConfig = YAML::LoadFile(param_file);
+
     /* ros */
     ros::init(argc, argv, "JumpController");
     ros::NodeHandle nh;
@@ -314,9 +319,20 @@ int main(int argc, char **argv)
     InitBody(joint, jointnum, leg, legnum, body, 62.5, 40.0, 110.0, 250.0);
     InitUser(user);
     // parameters refer to control
-    controller::JumpController jc(225.0, 1.8, 0.01,
-                                  0.01, 90.0, 45.0, 0.0, 0.0,
-                                  2.5, 0.1, loop_hz);
+    controller::JumpController jc(
+    yamlConfig["l_0"].as<double>(),
+    yamlConfig["k_spring"].as<double>(),
+    yamlConfig["margin"].as<double>(),
+    yamlConfig["friction"].as<double>(),
+    yamlConfig["base_vel_kp"].as<double>(),
+    yamlConfig["base_hei_kp"].as<double>(),
+    yamlConfig["base_hei_kd"].as<double>(),
+    yamlConfig["base_att_kp"].as<double>(),
+    yamlConfig["base_att_kd"].as<double>(),
+    yamlConfig["joint_kp"].as<double>(),
+    yamlConfig["joint_kd"].as<double>(),
+    loop_hz
+    );
     can::motor_data motor_cmd;
     geometry_msgs::Point bpos;
 

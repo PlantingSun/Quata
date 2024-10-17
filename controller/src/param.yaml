@@ -1,0 +1,11 @@
+l_0: 225.0
+k_spring: 1.8
+margin: 0.01
+friction: 0.3
+base_vel_kp: 0.002
+base_hei_kp: 160.0
+base_hei_kd: 80.0
+base_att_kp: 6.0
+base_att_kd: 0.0006
+joint_kp: 2.5
+joint_kd: 0.1

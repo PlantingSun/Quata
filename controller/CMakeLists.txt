@@ -49,9 +49,12 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
+link_directories(/usr/include)
+
 include_directories(
   include
   # ${TORCH_INCLUDE_DIRS}
+  /usr/include/yaml-cpp
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -82,6 +85,7 @@ add_executable(
 # Specify libraries to link a library or executable target against
 target_link_libraries(
   JumpController
+  yaml-cpp
   # ${TORCH_LIBRARIES}
   ${catkin_LIBRARIES}
 )

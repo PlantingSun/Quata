@@ -4,7 +4,7 @@
   <compiler angle="radian" meshdir="../meshes/" />
   <statistic meansize="0.03" extent="0.465147" center="-0.0174153 1.79806e-11 -0.0268814"/>
   <option timestep="0.001" integrator="Euler"/>
-  <option noslip_iterations="3" noslip_tolerance="1e-6"/>
+  <option noslip_iterations="3" noslip_tolerance="1e-8"/>
   <option>
     <flag multiccd="enable"/>
   </option>
@@ -55,7 +55,7 @@
       <freejoint/>
     </body> -->
 
-    <body name="foot" pos="0 0 0.229" quat="0.612 0.612 0.354 0.354">
+    <body name="foot" pos="0 0 0.129" quat="0.612 0.612 0.354 0.354">
       <freejoint />
       <!-- <joint name="footslidey" pos="0 0 0" axis="0 1 0" type="slide"/> -->
       <site name="EndSite" size=".01" pos="0 -0.029 0"/>
@@ -69,13 +69,13 @@
       </body>
     </body>
 
-    <body name="base" pos = "0 0 0.404">
+    <body name="base" pos = "0 0 0.304">
       <!--freejoint用来控制baselink是不是浮动的-->
       <!-- <freejoint /> -->
       <!-- <joint name="basehingez" pos="0 0 0" axis="0 0 1" type="hinge"/> -->
       <joint name="baseslidez" pos="0 0 0" axis="0 0 1" type="slide"/>
       <joint name="baseslidex" pos="0 0 0" axis="1 0 0" type="slide"/>
-      <!-- <joint name="basehingey" pos="0 0 0" axis="0 1 0" type="hinge"/> -->
+      <joint name="basehingey" pos="0 0 0" axis="0 1 0" type="hinge"/>
       <!-- <joint name="baseslidey" pos="0 0 0" axis="0 1 0" type="slide"/> -->
       <!-- <joint name="basehingex" pos="0 0 0" axis="1 0 0" type="hinge"/> -->
       <!-- <joint name="baseslidey" pos="0 0 0" axis="0 1 0" type="slide"/> -->
